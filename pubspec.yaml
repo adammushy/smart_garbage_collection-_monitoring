@@ -40,6 +40,8 @@ dependencies:
   firebase_database: ^10.5.0
   firebase_analytics: ^10.10.0
   json_theme: ^6.4.1+2
+  wtf_sliding_sheet: ^1.1.0
+  
   
 
 dev_dependencies:

@@ -1,3 +1,6 @@
+// ignore_for_file: prefer_const_constructors, prefer_final_fields
+
+import 'dart:html';
 import 'dart:typed_data';
 import 'dart:convert';
 
@@ -16,7 +19,9 @@ import 'package:flutter_project_template/shared-functions/icon_maker.dart';
 import 'package:flutter_project_template/shared-functions/routes.dart';
 import 'package:http/http.dart';
 import 'package:http/http.dart' as http;
-
+import 'package:wtf_sliding_sheet/wtf_sliding_sheet.dart';
+import 'package:location/location.dart';
+import 'package:geocoder/geocoder.dart';
 class DriversMap extends StatefulWidget {
   const DriversMap({super.key});
 
@@ -58,6 +63,9 @@ class _DriversMapState extends State<DriversMap> {
   static const String travelModeTransit = "transit";
   static const String travelModeBicycling = "bicycling";
 
+  bool _isBottomSheetExpanded = false;
+  List<DocumentSnapshot> _dustbins = [];
+
   checkIfLocationPermissionAllowed() async {
     _locationPermission = await Geolocator.requestPermission();
 
@@ -67,39 +75,6 @@ class _DriversMapState extends State<DriversMap> {
   }
 
   // Function to get route points from the Google Maps Directions API
-  // Future<List<LatLng>> getRoutePoints(
-  //     String origin, String destination, String mode) async {
-  //   final response = await http.get(
-  //     Uri.parse(
-  //       "https://maps.googleapis.com/maps/api/directions/json?origin=$origin&destination=$destination&mode=$mode&key=$_googleMapsApiKey",
-  //     ),
-  //   );
-
-  //   if (response.statusCode == 200) {
-  //     final data = jsonDecode(response.body);
-
-  //     // Ensure the 'routes' list exists and contains at least one route
-  //     if (data.containsKey('routes') && data['routes'].isNotEmpty) {
-  //       final route = data['routes'][0]['overview_polyline']['points'];
-
-  //       // Decode the polyline
-  //       final decoder = PolylinePoints();
-  //       List<PointLatLng> decodedPoints = decoder.decodePolyline(route);
-
-  //       // Convert List<PointLatLng> to List<LatLng>
-  //       List<LatLng> points = decodedPoints
-  //           .map((point) => LatLng(point.latitude, point.longitude))
-  //           .toList();
-  //       return points;
-  //     } else {
-  //       throw Exception(
-  //           "No routes found for the specified origin and destination.");
-  //     }
-  //   } else {
-  //     throw Exception(
-  //         "Failed to get directions with status code: ${response.statusCode}");
-  //   }
-  // }
 
   Future<List<List<LatLng>>> getRoutePoints(
       String origin, String destination, String mode) async {
@@ -168,7 +143,6 @@ class _DriversMapState extends State<DriversMap> {
     // You can add logic here to adjust the camera based on the current polyline or markers
     // recalculateRoute();
   }
-
 
   Future<void> showRouteToDustbin(LatLng dustbinPosition) async {
     // Set isLoadingRoute to true to indicate that the route calculation process has started
@@ -308,136 +282,277 @@ class _DriversMapState extends State<DriversMap> {
     });
   }
 
+  Marker? _myLocationMarker;
+  Location _location = Location();
+  Future<void> _showMyLocation() async {
+    final Uint8List locationMarker =
+        await getBytesFromAsset('assets/images/love.png', 90);
+    final currentLocation = await _location.getLocation();
+    setState(() {
+      _myLocationMarker = Marker(
+        markerId: MarkerId("myLocation"),
+        position: currentLocation.toLatLng(), // Use toLatLng() for LocationData
+        icon: BitmapDescriptor.fromBytes(
+            locationMarker), // Replace with your icon path
+      );
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     // _startPositionListener();
     checkIfLocationPermissionAllowed();
+    _loadDustbins();
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          GoogleMap(
-            myLocationEnabled: true, // Disable the default my location button
-            myLocationButtonEnabled: false,
-            mapType: MapType.normal,
-            initialCameraPosition: CameraPosition(
-              target: LatLng(-6.76438766, 39.22930733),
-              zoom: 14,
+    return SafeArea(
+      child: Scaffold(
+        body: Stack(children: [
+          SlidingSheet(
+            margin: EdgeInsets.only(left: 4, right: 4),
+            elevation: 8,
+            cornerRadius: 16,
+            snapSpec: const SnapSpec(
+              // Enable snapping. This is true by default.
+              snap: true,
+              // Set custom snapping points.
+              snappings: [0.05, 1.0],
+              // Define to what the snappings relate to. In this case,
+              // the total available space that the sheet can expand to.
+              positioning: SnapPositioning.relativeToAvailableSpace,
             ),
-            onMapCreated: _onMapCreated,
-            onCameraMove: onCameraMove,
-            markers: _markers,
-            polylines: polyLines,
-            indoorViewEnabled: true,
-          ),
-          Visibility(
-            visible: isLoadingRoute,
-            child: Center(
-              child: CircularProgressIndicator(),
-            ),
-          ),
-          Positioned(
-            top: 100,
-            left: 20,
-            child: GestureDetector(
-              onTap: () {
-                print("Loading");
-              },
-              child: const CircleAvatar(
-                backgroundColor: Colors.grey,
-                child: Icon(
-                  Icons.menu,
-                  color: Color.fromARGB(136, 0, 0, 0),
+            // The body widget will be displayed under the SlidingSheet
+            // and a parallax effect can be applied to it.
+            body: Stack(
+              children: [
+                GoogleMap(
+                  myLocationEnabled:
+                      true, // Disable the default my location button
+                  myLocationButtonEnabled: false,
+                  mapType: MapType.normal,
+                  initialCameraPosition: CameraPosition(
+                    target: LatLng(-6.76438766, 39.22930733),
+                    zoom: 14,
+                  ),
+                  onMapCreated: _onMapCreated,
+                  onCameraMove: onCameraMove,
+                  markers: _markers,
+                  polylines: polyLines,
+                  indoorViewEnabled: true,
                 ),
-              ),
-            ),
-          ),
-          // Custom "My Location" button
-          Positioned(
-            bottom: 20,
-            // right: 20,
-            left: 20,
-            child: FloatingActionButton(
-              onPressed: () async {
-                Position currentPosition = await Geolocator.getCurrentPosition(
-                  desiredAccuracy: geolocator.LocationAccuracy.high,
-                );
-                LatLng userPosition =
-                    LatLng(currentPosition.latitude, currentPosition.longitude);
-                mapController.animateCamera(
-                  CameraUpdate.newLatLng(userPosition),
-                );
-              },
-              child: Icon(Icons.my_location),
-            ),
-          ),
-          Positioned(
-            top: 0,
-            left: 0,
-            right: 0,
-            child: AnimatedSize(
-              curve: Curves.easeIn,
-              duration: const Duration(milliseconds: 120),
-              child: Container(
-                height: 120,
-                decoration: const BoxDecoration(
-                  borderRadius: BorderRadius.only(
-                    topRight: Radius.circular(20),
-                    topLeft: Radius.circular(20),
+                Visibility(
+                  visible: isLoadingRoute,
+                  child: Center(
+                    child: CircularProgressIndicator(),
                   ),
                 ),
-                child: Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
-                  child: Column(
-                    children: [
-                      Row(
-                        children: [
-                          ElevatedButton(
-                            child: const Text("Refresh"),
-                            onPressed: () {
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => DriversMap()),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              padding:
-                                  const EdgeInsets.fromLTRB(10, 10, 10, 10),
-                              textStyle: const TextStyle(
-                                  fontSize: 24, fontWeight: FontWeight.w900),
-                            ),
-                          ),
-                          Spacer(),
-                          Visibility(
-                            visible: polyLines.isNotEmpty,
-                            child: ElevatedButton(
-                              child: const Text("Cancel route"),
-                              onPressed: clearRoute,
-                              style: ElevatedButton.styleFrom(
-                                padding:
-                                    const EdgeInsets.fromLTRB(20, 10, 20, 10),
-                                textStyle: const TextStyle(
-                                    fontSize: 24, fontWeight: FontWeight.w900),
-                              ),
-                            ),
-                          ),
-                        ],
+                Positioned(
+                  top: 100,
+                  left: 20,
+                  child: GestureDetector(
+                    onTap: () {
+                      print("Loading");
+                    },
+                    child: const CircleAvatar(
+                      backgroundColor: Colors.grey,
+                      child: Icon(
+                        Icons.menu,
+                        color: Color.fromARGB(136, 0, 0, 0),
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+                // Custom "My Location" button
+                Positioned(
+                  bottom: 20,
+                  // right: 20,
+                  left: 20,
+                  child: FloatingActionButton(
+                    onPressed: () async {
+                      Position currentPosition =
+                          await Geolocator.getCurrentPosition(
+                        desiredAccuracy: geolocator.LocationAccuracy.high,
+                      );
+                      LatLng userPosition = LatLng(
+                          currentPosition.latitude, currentPosition.longitude);
+                      mapController.animateCamera(
+                        CameraUpdate.newLatLng(userPosition),
+                      );
+                    },
+                    child: Icon(Icons.my_location),
+                  ),
+                ),
+                Positioned(
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  child: AnimatedSize(
+                    curve: Curves.easeIn,
+                    duration: const Duration(milliseconds: 120),
+                    child: Container(
+                      height: 120,
+                      decoration: const BoxDecoration(
+                        borderRadius: BorderRadius.only(
+                          topRight: Radius.circular(20),
+                          topLeft: Radius.circular(20),
+                        ),
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 24, vertical: 18),
+                        child: Column(
+                          children: [
+                            Row(
+                              children: [
+                                ElevatedButton(
+                                  child: const Text("Refresh"),
+                                  onPressed: () {
+                                    Navigator.pushReplacement(
+                                      context,
+                                      MaterialPageRoute(
+                                          builder: (context) => DriversMap()),
+                                    );
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    padding: const EdgeInsets.fromLTRB(
+                                        10, 10, 10, 10),
+                                    textStyle: const TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.w900),
+                                  ),
+                                ),
+                                Spacer(),
+                                Visibility(
+                                  visible: polyLines.isNotEmpty,
+                                  child: ElevatedButton(
+                                    child: const Text("Cancel route"),
+                                    onPressed: clearRoute,
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.fromLTRB(
+                                          20, 10, 20, 10),
+                                      textStyle: const TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w900),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                    bottom: _isBottomSheetExpanded ? 20 : null,
+                    // left: 0,
+                    right: 20,
+                    child: Container()),
+              ],
             ),
+            // Center(
+            //   child: Text('This widget is below the SlidingSheet'),
+            // ),
+            builder: (context, state) {
+              // This is the content of the sheet that will get
+              // scrolled, if the content is bigger than the available
+              // height of the sheet.
+              return Container(
+                height: 500,
+                child: ListView.builder(
+                  itemCount: _dustbins.length,
+                  itemBuilder: (context, index) {
+                    final dustbin = _dustbins[index];
+                    // Null check for _dustbins
+                    if (dustbin != null) {
+                      IconData iconData;
+                      Color iconColor;
+
+                      // Determine icon and color based on percentage
+                      if (dustbin['percentage'] <= 30) {
+                        iconData = Icons.delete;
+                        iconColor = Colors.green;
+                      } else if (dustbin['percentage'] >= 75) {
+                        iconData = Icons.delete;
+                        iconColor = Colors.red;
+                      } else {
+                        iconData = Icons.delete;
+                        iconColor = Colors.orange;
+                      }
+                      return ListTile(
+                          title: Row(
+                            children: [
+                              Text(
+                                dustbin['name'],
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              Spacer(),
+                              // Text(
+                              //   'Percentage: ${dustbin['percentage']}%',
+                              //   style: TextStyle(color: Colors.green),
+                              // ),
+                              SizedBox(width: 8),
+                              Icon(iconData,
+                                  color: iconColor) // Large dustbin icon
+                            ],
+                          ),
+                          subtitle: dustbin['state'] != null
+                              ? Text(
+                                  'Status: ${dustbin['state']}',
+                                  style: TextStyle(color: Colors.grey),
+                                )
+                              : Text("null"),
+                          onTap: () {
+                            // Handle tap on a dustbin
+                            // For example, show route to this dustbin
+                          },
+                          leading: Text('${dustbin['percentage']}%',
+                              style:
+                                  TextStyle(color: iconColor, fontSize: 24)));
+                    } else {
+                      // Return a placeholder widget if _dustbins is null
+                      return SizedBox(); // You can replace this with any widget you want
+                    }
+                  },
+                ),
+              );
+
+              // child:Container() ,
+            },
+            headerBuilder: (context, state) {
+              return Container(
+                height: 56,
+                width: double.infinity,
+                color: Colors.green,
+                alignment: Alignment.center,
+                child: Text(
+                  'This is the header',
+                  style: TextStyle(),
+                ),
+              );
+            },
           ),
-        ],
+        ]),
       ),
     );
+  }
+
+  Future<void> _loadDustbins() async {
+    final QuerySnapshot dustbinsSnapshot =
+        await FirebaseFirestore.instance.collection('data').get();
+
+    setState(() {
+      // Sort dustbins by percentage in descending order
+      _dustbins = dustbinsSnapshot.docs;
+      _dustbins.sort((a, b) => b['percentage'].compareTo(a['percentage']));
+
+      print("DUSTBINS :: ${_dustbins}");
+    });
   }
 }
 
