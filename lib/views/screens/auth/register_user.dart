@@ -1,8 +1,8 @@
 // ignore_for_file: prefer_const_literals_to_create_immutables, prefer_const_constructors
 
 import 'package:flutter/material.dart';
-import 'package:flutter_project_template/providers/user-provider.dart';
-import 'package:flutter_project_template/shared-functions/snack_bar.dart';
+import 'package:SGMCS/providers/user-provider.dart';
+import 'package:SGMCS/shared-functions/snack_bar.dart';
 import 'package:provider/provider.dart';
 
 class Signup extends StatefulWidget {
@@ -34,7 +34,7 @@ class _SignupState extends State<Signup> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+      // backgroundColor: Theme.of(context).colorScheme.primaryContainer,
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_project_template/constants/app_constants.dart';
-import 'package:flutter_project_template/helpers/database-sqlf/database.dart';
-import 'package:flutter_project_template/providers/default_provider.dart';
-import 'package:flutter_project_template/shared-preference-manager/preference-manager.dart';
+import 'package:SGMCS/constants/app_constants.dart';
+import 'package:SGMCS/helpers/database-sqlf/database.dart';
+import 'package:SGMCS/providers/default_provider.dart';
+import 'package:SGMCS/shared-preference-manager/preference-manager.dart';
 import 'package:provider/provider.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_project_template/main.dart';
+import 'package:SGMCS/main.dart';
 import 'package:intro_screen_onboarding_flutter/intro_app.dart';
 
 class OnboardingScreen extends StatelessWidget {

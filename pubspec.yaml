@@ -1,4 +1,4 @@
-name: flutter_project_template
+name: SGMCS
 description: "A new Flutter project."
 publish_to: 'none'
 
@@ -41,6 +41,7 @@ dependencies:
   firebase_analytics: ^10.10.0
   json_theme: ^6.4.1+2
   wtf_sliding_sheet: ^1.1.0
+  fan_side_drawer: ^1.0.2
   
   
 

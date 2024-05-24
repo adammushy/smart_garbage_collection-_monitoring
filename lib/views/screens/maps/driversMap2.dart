@@ -1,12 +1,14 @@
-// ignore_for_file: prefer_const_constructors, prefer_final_fields
+// ignore_for_file: prefer_const_constructors, prefer_final_fields, prefer_const_literals_to_create_immutables
 
-import 'dart:html';
 import 'dart:typed_data';
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
+import 'package:SGMCS/views/screens/drawer/custom_drawer.dart';
+import 'package:SGMCS/views/screens/forms/report-form.dart';
+import 'package:SGMCS/views/screens/maps/dustbindetails.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:open_route_service/open_route_service.dart';
@@ -15,18 +17,22 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geolocator/geolocator.dart' as geolocator;
-import 'package:flutter_project_template/shared-functions/icon_maker.dart';
-import 'package:flutter_project_template/shared-functions/routes.dart';
+import 'package:SGMCS/shared-functions/icon_maker.dart';
+import 'package:SGMCS/shared-functions/routes.dart';
 import 'package:http/http.dart';
 import 'package:http/http.dart' as http;
 import 'package:wtf_sliding_sheet/wtf_sliding_sheet.dart';
 import 'package:location/location.dart';
-import 'package:geocoder/geocoder.dart';
+import 'package:fan_side_drawer/fan_side_drawer.dart';
+
+// import 'package:geocoder/geocoder.dart';
 class DriversMap extends StatefulWidget {
   const DriversMap({super.key});
 
   @override
   State<DriversMap> createState() => _DriversMapState();
+
+  static void showAsBottomSheet(BuildContext context, DocumentSnapshot<Object?> dustbin) {}
 }
 
 class _DriversMapState extends State<DriversMap> {
@@ -282,22 +288,6 @@ class _DriversMapState extends State<DriversMap> {
     });
   }
 
-  Marker? _myLocationMarker;
-  Location _location = Location();
-  Future<void> _showMyLocation() async {
-    final Uint8List locationMarker =
-        await getBytesFromAsset('assets/images/love.png', 90);
-    final currentLocation = await _location.getLocation();
-    setState(() {
-      _myLocationMarker = Marker(
-        markerId: MarkerId("myLocation"),
-        position: currentLocation.toLatLng(), // Use toLatLng() for LocationData
-        icon: BitmapDescriptor.fromBytes(
-            locationMarker), // Replace with your icon path
-      );
-    });
-  }
-
   @override
   void initState() {
     super.initState();
@@ -306,10 +296,32 @@ class _DriversMapState extends State<DriversMap> {
     _loadDustbins();
   }
 
+  // ),
+  GlobalKey<ScaffoldState> sKey = GlobalKey<ScaffoldState>();
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
+        // key: sKey,
+        appBar: AppBar(),
+        drawer: Drawer(
+          width: 255,
+          child: FanSideDrawer(
+            menuItems: [
+              DrawerMenuItem(
+                title: "Report",
+                onMenuTapped: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ReportForm(),
+                    ),
+                  );
+                },
+              )
+            ],
+          ),
+        ),
         body: Stack(children: [
           SlidingSheet(
             margin: EdgeInsets.only(left: 4, right: 4),
@@ -320,8 +332,8 @@ class _DriversMapState extends State<DriversMap> {
               snap: true,
               // Set custom snapping points.
               snappings: [0.05, 1.0],
-              // Define to what the snappings relate to. In this case,
-              // the total available space that the sheet can expand to.
+              // Define to what the snappings relate to. from the bottom to top
+              // the total available space that the my bottomsheet can expand to.
               positioning: SnapPositioning.relativeToAvailableSpace,
             ),
             // The body widget will be displayed under the SlidingSheet
@@ -350,11 +362,12 @@ class _DriversMapState extends State<DriversMap> {
                   ),
                 ),
                 Positioned(
-                  top: 100,
+                  top: 150,
                   left: 20,
                   child: GestureDetector(
                     onTap: () {
-                      print("Loading");
+                      // sKey.currentState!.openDrawer();
+                      // showAsBottomSheet(context);
                     },
                     child: const CircleAvatar(
                       backgroundColor: Colors.grey,
@@ -455,36 +468,63 @@ class _DriversMapState extends State<DriversMap> {
                     child: Container()),
               ],
             ),
-            // Center(
-            //   child: Text('This widget is below the SlidingSheet'),
-            // ),
+
             builder: (context, state) {
               // This is the content of the sheet that will get
               // scrolled, if the content is bigger than the available
               // height of the sheet.
               return Container(
-                height: 500,
+                height: 400,
                 child: ListView.builder(
                   itemCount: _dustbins.length,
                   itemBuilder: (context, index) {
                     final dustbin = _dustbins[index];
+
+                    final DocumentSnapshot<Object?> dustbinSnapshot =
+                        _dustbins[index];
+                    final Map<String, dynamic> dustbinData =
+                        dustbinSnapshot.data() as Map<String, dynamic>;
+
                     // Null check for _dustbins
                     if (dustbin != null) {
                       IconData iconData;
                       Color iconColor;
 
-                      // Determine icon and color based on percentage
+                      Color textColor;
+                      Color buttonColor;
+
+                      // Determine text color and button color based on percentage
+
+                      String imageAsset;
                       if (dustbin['percentage'] <= 30) {
+                        textColor = Colors.green; // Green
                         iconData = Icons.delete;
                         iconColor = Colors.green;
-                      } else if (dustbin['percentage'] >= 75) {
+                        imageAsset = 'assets/images/greendustbin.png';
+                      } else if (dustbin['percentage'] > 30 &&
+                          dustbin['percentage'] <= 50) {
                         iconData = Icons.delete;
-                        iconColor = Colors.red;
-                      } else {
+                        iconColor = Colors.yellow;
+                        textColor = Colors.yellow; // Yellow
+
+                        imageAsset = 'assets/images/yellowdustbin.png';
+                      } else if (dustbin['percentage'] > 50 &&
+                          dustbin['percentage'] <= 80) {
                         iconData = Icons.delete;
                         iconColor = Colors.orange;
+                        textColor = Colors.orange; // Orange
+
+                        imageAsset = 'assets/images/orangedustbin.png';
+                      } else {
+                        textColor = Colors.red; // Red
+                        iconData = Icons.delete;
+                        iconColor = Colors.red;
+                        imageAsset = 'assets/images/reddustbin.png';
                       }
                       return ListTile(
+                          onLongPress: () {
+                            showAsBottomSheet(context, dustbin);
+                          },
                           title: Row(
                             children: [
                               Text(
@@ -492,10 +532,7 @@ class _DriversMapState extends State<DriversMap> {
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
                               Spacer(),
-                              // Text(
-                              //   'Percentage: ${dustbin['percentage']}%',
-                              //   style: TextStyle(color: Colors.green),
-                              // ),
+
                               SizedBox(width: 8),
                               Icon(iconData,
                                   color: iconColor) // Large dustbin icon
@@ -511,9 +548,14 @@ class _DriversMapState extends State<DriversMap> {
                             // Handle tap on a dustbin
                             // For example, show route to this dustbin
                           },
-                          leading: Text('${dustbin['percentage']}%',
-                              style:
-                                  TextStyle(color: iconColor, fontSize: 24)));
+                          leading: InkWell(
+                            onTap: () {
+                              showAsBottomSheet(context, dustbin);
+                            },
+                            child: Text('${dustbin['percentage']}%',
+                                style:
+                                    TextStyle(color: iconColor, fontSize: 24)),
+                          ));
                     } else {
                       // Return a placeholder widget if _dustbins is null
                       return SizedBox(); // You can replace this with any widget you want
@@ -526,7 +568,7 @@ class _DriversMapState extends State<DriversMap> {
             },
             headerBuilder: (context, state) {
               return Container(
-                height: 56,
+                height: 50,
                 width: double.infinity,
                 color: Colors.green,
                 alignment: Alignment.center,
@@ -553,6 +595,132 @@ class _DriversMapState extends State<DriversMap> {
 
       print("DUSTBINS :: ${_dustbins}");
     });
+  }
+
+  void showAsBottomSheet(BuildContext context, dustbin) async {
+    final result = await showSlidingBottomSheet(context, builder: (context) {
+      return SlidingSheetDialog(
+        elevation: 8,
+        cornerRadius: 16,
+        snapSpec: SnapSpec(
+          snap: true,
+          snappings: [0.4, 0.7, 1.0],
+          positioning: SnapPositioning.relativeToAvailableSpace,
+        ),
+        builder: (context, state) {
+          final int percentage = dustbin['percentage'];
+
+          Color textColor;
+          Color buttonColor;
+
+          // Determine text color and button color based on percentage
+
+          String imageAsset;
+          if (dustbin['percentage'] <= 30) {
+            textColor = Colors.green; // Green
+
+            imageAsset = 'assets/images/greendustbin.png';
+          } else if (dustbin['percentage'] > 30 &&
+              dustbin['percentage'] <= 50) {
+            textColor = Colors.yellow; // Yellow
+
+            imageAsset = 'assets/images/yellowdustbin.png';
+          } else if (dustbin['percentage'] > 50 &&
+              dustbin['percentage'] <= 80) {
+            textColor = Colors.orange; // Orange
+
+            imageAsset = 'assets/images/orangedustbin.png';
+          } else {
+            textColor = Colors.red; // Red
+            imageAsset = 'assets/images/reddustbin.png';
+          }
+
+          return Container(
+            height: 500,
+            padding: EdgeInsets.all(16),
+            color: Colors.white, // Adjust as needed
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${dustbin['state']}',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                      decoration: TextDecoration.none),
+                ),
+                SizedBox(height: 16),
+                Center(
+                  child: Container(
+                    height: 120,
+                    width: 120,
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage(imageAsset),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Center(
+                  child: Text(
+                    '${dustbin['name']}',
+                    style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        decoration: TextDecoration.none),
+                  ),
+                ),
+                SizedBox(height: 16),
+                Center(
+                  child: Text(
+                    '${dustbin['percentage']}%',
+                    style: TextStyle(
+                        fontSize: 48,
+                        fontWeight: FontWeight.bold,
+                        color: textColor,
+                        decoration: TextDecoration.none),
+                  ),
+                ),
+                // Text(
+                //   '${dustbin['state'] ?? 'Unknown'}',
+                //   style: TextStyle(fontSize: 18),
+                // ),
+                SizedBox(height: 16),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Generate route to this dustbin
+                      // Call the function to generate the route here
+                      showRouteToDustbin(
+                        LatLng(dustbin['Latitude'], dustbin['Longitude']),
+                      );
+                      Navigator.pop(context);
+                    },
+                    style: ButtonStyle(
+                      maximumSize: MaterialStatePropertyAll(Size(240, 80)),
+                      minimumSize: MaterialStatePropertyAll(Size(200, 60)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Generate Route', style: TextStyle(fontSize: 16)),
+                        Icon(Icons.directions, size: 32)
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    });
+
+    print("RESULT :: $result"); // This is the result.
   }
 }
 

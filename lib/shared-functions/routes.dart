@@ -12,8 +12,8 @@ import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geolocator/geolocator.dart' as geolocator;
-import 'package:flutter_project_template/shared-functions/icon_maker.dart';
-import 'package:flutter_project_template/shared-functions/routes.dart';
+import 'package:SGMCS/shared-functions/icon_maker.dart';
+import 'package:SGMCS/shared-functions/routes.dart';
 import 'package:http/http.dart';
 import 'package:http/http.dart' as http;
 

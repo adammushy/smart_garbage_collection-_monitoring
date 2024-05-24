@@ -1,0 +1,48 @@
+// Future<void> _loadDustbins() async {
+  //   final snapshot = await db.collection("data").get();
+  //   setState(() {
+  //     _dustbins = snapshot.docs;
+  //   });
+  // }
+
+//Load DUSTBINS AND CALCULAT DISTANCES
+  // Future<void> _loadDustbins() async {
+  //   try {
+  //     // Get the user's current position
+  //     Position userPosition = await Geolocator.getCurrentPosition(
+  //       desiredAccuracy: geolocator.LocationAccuracy.high,
+  //     );
+
+  //     final QuerySnapshot dustbinsSnapshot =
+  //         await FirebaseFirestore.instance.collection('data').get();
+
+  //     setState(() {
+  //       // Retrieve the dustbin documents
+  //       _dustbins = dustbinsSnapshot.docs;
+
+  //       // Sort dustbins by distance to the user's current position
+  //       _dustbins.sort((a, b) {
+  //         final dataA = a.data() as Map<String, dynamic>;
+  //         final dataB = b.data() as Map<String, dynamic>;
+  //         double distanceA = Geolocator.distanceBetween(
+  //           userPosition.latitude,
+  //           userPosition.longitude,
+  //           dataA["Latitude"] ?? 0.0,
+  //           dataA["Longitude"] ?? 0.0,
+  //         );
+  //         double distanceB = Geolocator.distanceBetween(
+  //           userPosition.latitude,
+  //           userPosition.longitude,
+  //           dataB["Latitude"] ?? 0.0,
+  //           dataB["Longitude"] ?? 0.0,
+  //         );
+  //         print("DISTANCES :: $distanceA, $distanceB");
+  //         return distanceA.compareTo(distanceB);
+  //       });
+
+  //       print("DUSTBINS LIST :: ${_dustbins}");
+  //     });
+  //   } catch (e) {
+  //     print("Error loading dustbins: $e");
+  //   }
+  // }

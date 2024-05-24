@@ -6,8 +6,8 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_project_template/providers/data-provider.dart';
-import 'package:flutter_project_template/views/screens/forms/report-form.dart';
+import 'package:SGMCS/providers/data-provider.dart';
+import 'package:SGMCS/views/screens/forms/report-form.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:open_route_service/open_route_service.dart';

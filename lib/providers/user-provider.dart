@@ -1,9 +1,9 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:flutter_project_template/constants/app_constants.dart';
-import 'package:flutter_project_template/helpers/api/api_client_http.dart';
-import 'package:flutter_project_template/shared-preference-manager/preference-manager.dart';
+import 'package:SGMCS/constants/app_constants.dart';
+import 'package:SGMCS/helpers/api/api_client_http.dart';
+import 'package:SGMCS/shared-preference-manager/preference-manager.dart';
 
 class UserManagementProvider extends ChangeNotifier {
   Future<Map<String, dynamic>> userLogin(data, ctx) async {
@@ -30,9 +30,7 @@ class UserManagementProvider extends ChangeNotifier {
               AppConstants.token,
               json.encode(body[
                   'token'])); // Token is already a string, no need to encode
-          return {"status": "true",
-          
-          "usertype": body['user']['usertype']};
+          return {"status": "true", "usertype": body['user']['usertype']};
         }
         return {"status": false, "body": body, "exception": false};
       }
@@ -42,13 +40,12 @@ class UserManagementProvider extends ChangeNotifier {
     }
   }
 
-  Future<Map<String, dynamic>> registerUser(ctx,data) async {
+  Future<Map<String, dynamic>> registerUser(ctx, data) async {
     try {
       var res = await ApiClientHttp(
               headers: <String, String>{'Content-type': 'application/json'})
           .postRequest(AppConstants.registerUrl, data, ctx);
-        print("RES :: $res");
-
+      print("RES :: $res");
 
       if (res == null) {
         return {"status": "Fail"};

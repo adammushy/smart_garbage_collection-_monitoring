@@ -1,11 +1,12 @@
+import 'package:SGMCS/views/screens/maps/citizenmap2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_project_template/providers/user-provider.dart';
-import 'package:flutter_project_template/shared-functions/snack_bar.dart';
-import 'package:flutter_project_template/views/screens/auth/register_user.dart';
-import 'package:flutter_project_template/views/screens/maps/citizenmap.dart';
-import 'package:flutter_project_template/views/screens/maps/driversMap2.dart';
-import 'package:flutter_project_template/views/screens/maps/driversmap.dart';
+import 'package:SGMCS/providers/user-provider.dart';
+import 'package:SGMCS/shared-functions/snack_bar.dart';
+import 'package:SGMCS/views/screens/auth/register_user.dart';
+import 'package:SGMCS/views/screens/maps/citizenmap.dart';
+import 'package:SGMCS/views/screens/maps/driversMap2.dart';
+import 'package:SGMCS/views/screens/maps/driversmap.dart';
 import 'package:provider/provider.dart';
 
 class Login extends StatefulWidget {
@@ -198,7 +199,7 @@ class _LoginState extends State<Login> {
                               context,
                               MaterialPageRoute(
                                 builder: (context) {
-                                  return CitizenMap();
+                                  return CitizenMap2();
                                 },
                               ),
                             );

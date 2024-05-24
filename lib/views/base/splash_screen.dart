@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_project_template/constants/dimensions.dart';
-import 'package:flutter_project_template/constants/images.dart';
-import 'package:flutter_project_template/views/screens/onboarding/onboarding-screen.dart';
+import 'package:SGMCS/constants/dimensions.dart';
+import 'package:SGMCS/constants/images.dart';
+import 'package:SGMCS/views/screens/onboarding/onboarding-screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
