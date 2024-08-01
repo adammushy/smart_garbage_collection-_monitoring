@@ -5,7 +5,11 @@ import 'package:SGMCS/constants/app_constants.dart';
 import 'package:SGMCS/helpers/api/api_client_http.dart';
 import 'package:SGMCS/shared-preference-manager/preference-manager.dart';
 
-class UserManagementProvider extends ChangeNotifier {
+class UserManagementProvider with ChangeNotifier {
+  var _allUsers;
+
+  get allUsers => _allUsers;
+
   Future<Map<String, dynamic>> userLogin(data, ctx) async {
     print(data);
     try {
@@ -61,6 +65,28 @@ class UserManagementProvider extends ChangeNotifier {
       ;
     } catch (e) {
       return {"status": "Fail", "message": e.toString()};
+    }
+  }
+
+  Future<bool> fetchAllUsers() async {
+    try {
+      var res = await ApiClientHttp(
+              headers: <String, String>{"Content-Type": "application/json"})
+          .getRequest(AppConstants.registerUrl);
+
+      if (res == null) {
+        print("RES ON NULl :: $res");
+        return false;
+      } else {
+        var body = res;
+
+        _allUsers = body;
+        print("All USerss :: $_allUsers");
+        notifyListeners();
+        return true;
+      }
+    } catch (e) {
+      return false;
     }
   }
 }

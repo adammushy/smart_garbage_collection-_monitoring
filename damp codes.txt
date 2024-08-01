@@ -46,3 +46,203 @@
   //     print("Error loading dustbins: $e");
   //   }
   // }
+
+      Positioned(
+                  top: 150,
+                  left: 20,
+                  child: GestureDetector(
+                    onTap: () {
+                      // sKey.currentState!.openDrawer();
+                      // showAsBottomSheet(context);
+                    },
+                    child: const CircleAvatar(
+                      backgroundColor: Colors.grey,
+                      child: Icon(
+                        Icons.menu,
+                        color: Color.fromARGB(136, 0, 0, 0),
+                      ),
+                    ),
+                  ),
+                ),
+
+
+                
+  // Future<void> _pickImage(ImageSource source) async {
+  //   final ImagePicker _picker = ImagePicker();
+  //   final List<XFile>? selectedImages = await _picker.pickMultiImage();
+  //   if (selectedImages != null) {
+  //     setState(() {
+  //       _imageFiles = selectedImages;
+  //     });
+  //   }
+  // }
+
+  // Future<void> _takePictureWithCamera() async {
+  //   final ImagePicker _picker = ImagePicker();
+  //   final XFile? picture = await _picker.pickImage(source: ImageSource.camera);
+  //   if (picture != null) {
+  //     setState(() {
+  //       _imageFiles!.add(picture);
+  //     });
+  //   }
+  // }
+
+
+
+
+  
+  // Future<void> showRouteToDustbin(LatLng dustbinPosition) async {
+  //   setState(() {
+  //     isLoadingRoute = true;
+  //   });
+
+  //   try {
+  //     final Position currentPosition = await Geolocator.getCurrentPosition(
+  //       desiredAccuracy: geolocator.LocationAccuracy.high,
+  //     );
+
+  //     LatLng origin =
+  //         LatLng(currentPosition.latitude, currentPosition.longitude);
+
+  //     mapController.animateCamera(CameraUpdate.newLatLng(origin));
+
+  //     final List<List<LatLng>> allRoutes = await getRoutePoints(
+  //       "${origin.latitude},${origin.longitude}",
+  //       "${dustbinPosition.latitude},${dustbinPosition.longitude}",
+  //       "driving",
+  //     );
+  //     print("ROUTES ::: $allRoutes");
+
+  //     for (int i = 0; i < allRoutes.length; i++) {
+  //       final List<LatLng> routePoints = allRoutes[i];
+
+  //       final Polyline routePolyline = Polyline(
+  //         polylineId: PolylineId("route_to_dustbin_$i"),
+  //         points: routePoints,
+  //         width: i == 0 ? 5 : 2,
+  //         color: i == 0 ? Colors.green : Colors.grey,
+  //         patterns: i == 0 ? [] : [PatternItem.dot],
+  //       );
+
+  //       setState(() {
+  //         polyLines.add(routePolyline);
+  //       });
+  //       print("ROUTES ::: $polyLines");
+  //     }
+
+  //     double distance = await getRouteDistance(origin, dustbinPosition);
+  //     int drivingDuration =
+  //         await getRouteDuration(origin, dustbinPosition, 'driving');
+  //     int walkingDuration =
+  //         await getRouteDuration(origin, dustbinPosition, 'walking');
+
+  //     showDialog(
+  //       context: context,
+  //       builder: (context) {
+  //         return AlertDialog(
+  //           title: Text("Route Information"),
+  //           content: Column(
+  //             mainAxisSize: MainAxisSize.min,
+  //             children: [
+  //               Text("Total Distance: ${distance.toStringAsFixed(2)} km"),
+  //               Text("Estimated Driving Time: $drivingDuration minutes"),
+  //               Text("Estimated Walking Time: $walkingDuration minutes"),
+  //             ],
+  //           ),
+  //           actions: [
+  //             TextButton(
+  //               onPressed: () => Navigator.pop(context),
+  //               child: Text("OK"),
+  //             ),
+  //           ],
+  //         );
+  //       },
+  //     );
+
+  //     geolocator.Geolocator.getPositionStream().listen((Position newPosition) {
+  //       setState(() {
+  //         origin = LatLng(newPosition.latitude, newPosition.longitude);
+  //       });
+
+  //       mapController.animateCamera(CameraUpdate.newLatLng(origin));
+  //     });
+  //   } catch (e) {
+  //     print('Error in showRouteToDustbin: $e');
+  //   } finally {
+  //     setState(() {
+  //       isLoadingRoute = false;
+  //     });
+  //   }
+  // }
+
+
+
+
+  LOAD MARKERS ----
+  
+  // Future<void> _loadMarkers() async {
+  //   final Uint8List markerIcon =
+  //       await getBytesFromAsset('assets/images/greendustbin.png', 90);
+
+  //   await db
+  //       .collection("data")
+  //       .where("percentage", isLessThanOrEqualTo: 60)
+  //       .where("state")
+  //       .snapshots()
+  //       .listen((event) {
+  //     setState(() {
+  //       _markers.clear();
+  //       for (var doc in event.docs) {
+  //         final position =
+  //             LatLng(doc.data()["Latitude"], doc.data()["Longitude"]);
+  //         final marker = Marker(
+  //           markerId: MarkerId(doc.id),
+  //           position: position,
+  //           infoWindow: InfoWindow(
+  //             title:
+  //                 "id : ${doc.data()["name"]}\n state: ${doc.data()["state"]}",
+  //             snippet: "percentage : ${doc.data()["percentage"]}",
+  //             onTap: () => showRouteToDustbin(position),
+  //           ),
+  //           icon: BitmapDescriptor.fromBytes(markerIcon),
+  //         );
+  //         _markers.add(marker);
+  //       }
+  //     });
+  //   });
+
+  //   final Uint8List markerIconFull =
+  //       await getBytesFromAsset('assets/images/reddustbin.png', 90);
+
+  //   await db
+  //       .collection("data")
+  //       .where("percentage", isGreaterThan: 60)
+  //       .snapshots()
+  //       .listen((event) {
+  //     setState(() {
+  //       for (var doc in event.docs) {
+  //         final position =
+  //             LatLng(doc.data()["Latitude"], doc.data()["Longitude"]);
+  //         final marker = Marker(
+  //           markerId: MarkerId(doc.id),
+  //           position: position,
+  //           infoWindow: InfoWindow(
+  //             title:
+  //                 "id : ${doc.data()["name"]}\n state: ${doc.data()["state"]}",
+  //             snippet: "percentage : ${doc.data()["percentage"]}",
+  //             onTap: () => showRouteToDustbin(position),
+  //           ),
+  //           icon: BitmapDescriptor.fromBytes(markerIconFull),
+  //         );
+  //         _markers.add(marker);
+
+  //         // Add the position to the list if the filling level is 90% or above
+  //         if (doc.data()["percentage"] >= 90) {
+  //           highFillingLevelDustbins.add(position);
+  //         }
+
+  //         print("HIGHEST FILLED DUSTBINS :: ${highFillingLevelDustbins}");
+  //       }
+  //     });
+  //   });
+  // }

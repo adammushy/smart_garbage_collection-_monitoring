@@ -1,3 +1,8 @@
+import 'dart:convert';
+
+import 'package:SGMCS/constants/app_constants.dart';
+import 'package:SGMCS/shared-preference-manager/preference-manager.dart';
+import 'package:SGMCS/views/screens/admin/dashboard.dart';
 import 'package:SGMCS/views/screens/maps/citizenmap2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -28,6 +33,56 @@ class _LoginState extends State<Login> {
   bool _obscurePassword = true;
   // final Box _boxLogin = Hive.box("login");
   // final Box _boxAccounts = Hive.box("accounts");
+  @override
+  void initState() {
+    super.initState();
+    getUserId();
+    // Future.delayed(const Duration(seconds: 3), () async {
+    //   var isLogin =
+    //       await SharedPreferencesManager().getBool(AppConstants.isLogin);
+
+    //   if (isLogin == true) {
+    //     usertype == "ADMIN"
+    //         ? Navigator.pushReplacement(
+    //             context,
+    //             MaterialPageRoute(builder: (context) => Login()),
+    //           )
+    //         : Navigator.pushReplacement(
+    //             context,
+    //             MaterialPageRoute(builder: (context) => DriversMap()),
+    //           );
+    //   } else {
+    //     Navigator.pushReplacement(
+    //       context,
+    //       MaterialPageRoute(builder: (context) => Login()),
+    //     );
+    //   }
+    // });
+  }
+
+  var userId;
+
+  var usertype;
+  Future<void> getUserId() async {
+    var sharedPref = SharedPreferencesManager();
+    var localStorage = await sharedPref.getString(AppConstants.user);
+
+    if (localStorage == null || localStorage.isEmpty) {
+      print("Error: Local storage data is null or empty.");
+      return;
+    }
+
+    try {
+      var user = jsonDecode(localStorage);
+      setState(() {
+        userId = user['id'];
+        usertype = user['usertype'];
+        print("user ID :: $userId");
+      });
+    } catch (e) {
+      print("Error decoding JSON: $e");
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,9 +111,9 @@ class _LoginState extends State<Login> {
               const SizedBox(height: 60),
               TextFormField(
                 controller: _controllerUsername,
-                keyboardType: TextInputType.name,
+                keyboardType: TextInputType.emailAddress,
                 decoration: InputDecoration(
-                  labelText: "Username",
+                  labelText: "email",
                   prefixIcon: const Icon(Icons.person_outline),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -125,40 +180,53 @@ class _LoginState extends State<Login> {
                       ),
                     ),
                     onPressed: () async {
-                      // bool validate = _formKey.currentState!.validate();
-                      // if (validate) {
-                      //   var data = {
-                      //     "email": _controllerUsername.text,
-                      //     "password": _controllerPassword.text
-                      //   };
-                      //   print(data);
-                      //   Map<String, dynamic> result =
-                      //       await Provider.of<UserManagementProvider>(context,
-                      //               listen: false)
-                      //           .userLogin(data, context);
-                      //   print("result :: ${result['usertype']}");
+                      bool validate = _formKey.currentState!.validate();
+                      if (validate) {
+                        var data = {
+                          "email": _controllerUsername.text,
+                          "password": _controllerPassword.text
+                        };
+                        print(data);
+                        Map<String, dynamic> result =
+                            await Provider.of<UserManagementProvider>(context,
+                                    listen: false)
+                                .userLogin(data, context);
+                        print("result :: ${result['usertype']}");
 
-                      //   if (result['usertype'] == 'DRIVER') {
-                      //     Navigator.push(
-                      //         context,
-                      //         MaterialPageRoute(
-                      //             builder: (context) => DriversMap()));
-                      //     ShowMToast(context).successToast(
-                      //         message: "Successfully log in",
-                      //         alignment: Alignment.bottomCenter);
-                      //   } else {
-                      //     ShowMToast(context).successToast(
-                      //         message:
-                      //             "Thank you for login but you can't user this platform",
-                      //         alignment: Alignment.bottomCenter);
-                      //     _controllerUsername.clear();
-                      //     _controllerPassword.clear();
-                      //   }
-                      // }
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => DriversMap()));
+                        if (result['usertype'] == 'DRIVER') {
+                          SharedPreferencesManager()
+                              .saveBool(AppConstants.isLogin, true);
+                          Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => DriversMap()));
+                          ShowMToast(context).successToast(
+                              message: "Successfully log in",
+                              alignment: Alignment.bottomCenter);
+                        } else {
+                          ShowMToast(context).successToast(
+                              message: "Successfully log in",
+                              alignment: Alignment.bottomCenter);
+
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => DashboardScreen(),
+                            ),
+                          );
+
+                          // ShowMToast(context).successToast(
+                          //     message:
+                          //         "Thank you for login but you can't user this platform",
+                          //     alignment: Alignment.bottomCenter);
+                          // _controllerUsername.clear();
+                          // _controllerPassword.clear();
+                        }
+                      }
+                      //   Navigator.push(
+                      //       context,
+                      //       MaterialPageRoute(
+                      //           builder: (context) => DriversMap()));
                     },
                     child: const Text("Login"),
                   ),
