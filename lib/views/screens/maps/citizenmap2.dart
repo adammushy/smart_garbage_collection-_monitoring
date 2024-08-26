@@ -11,6 +11,7 @@ import 'package:flutter/widgets.dart';
 import 'package:SGMCS/views/screens/drawer/custom_drawer.dart';
 import 'package:SGMCS/views/screens/forms/report-form.dart';
 import 'package:SGMCS/views/screens/maps/dustbindetails.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:open_route_service/open_route_service.dart';
@@ -51,8 +52,8 @@ class _CitizenMap2State extends State<CitizenMap2> {
   LatLng? _currentDustbinPosition;
   Position? userCurrentPosition;
 
-  static const String _googleMapsApiKey =
-      "AIzaSyD79hEbrrlDT2ko8JSpUrjgzIv7PjAwSTk";
+  static String _googleMapsApiKey =
+      "${dotenv.env['googleApiKey']}";
 
   LocationPermission? _locationPermission;
 

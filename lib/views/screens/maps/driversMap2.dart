@@ -15,6 +15,7 @@ import 'package:flutter/widgets.dart';
 import 'package:SGMCS/views/screens/drawer/custom_drawer.dart';
 import 'package:SGMCS/views/screens/forms/report-form.dart';
 import 'package:SGMCS/views/screens/maps/dustbindetails.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:async';
 import 'dart:convert';
 import 'package:open_route_service/open_route_service.dart';
@@ -58,8 +59,8 @@ class _DriversMapState extends State<DriversMap> {
   Position? userCurrentPosition;
 
   // Define your API key
-  static const String _googleMapsApiKey =
-      "AIzaSyD79hEbrrlDT2ko8JSpUrjgzIv7PjAwSTk"; // Replace with your actual API Key
+  static  String _googleMapsApiKey =
+      "${dotenv.env['googleApiKey']}"; // Replace with your actual API Key
 
   LocationPermission? _locationPermission;
 
@@ -230,6 +231,72 @@ class _DriversMapState extends State<DriversMap> {
     }
   }
 
+  Future<void> showRouteToHighFillingDustbins() async {
+    if (highFillingLevelDustbins.isEmpty) {
+      print("No dustbins with filling level 90% and above.");
+      return;
+    }
+
+    setState(() {
+      isLoadingRoute = true;
+    });
+
+    try {
+      // Get the user's current position
+      final Position currentPosition = await Geolocator.getCurrentPosition(
+        desiredAccuracy: geolocator.LocationAccuracy.high,
+      );
+
+      // Convert the current position to a LatLng
+      LatLng origin =
+          LatLng(currentPosition.latitude, currentPosition.longitude);
+
+      // Create a list of all destinations including the origin
+      List<LatLng> allDestinations = [origin, ...highFillingLevelDustbins];
+
+      // Iterate through each pair of consecutive points to calculate the route
+      for (int i = 0; i < allDestinations.length - 1; i++) {
+        final LatLng start = allDestinations[i];
+        final LatLng end = allDestinations[i + 1];
+
+        final List<List<LatLng>> routePoints = await getRoutePoints(
+          "${start.latitude},${start.longitude}",
+          "${end.latitude},${end.longitude}",
+          "driving", // Specify travel mode here
+        );
+
+        // Create a polyline for each segment of the route
+        for (int j = 0; j < routePoints.length; j++) {
+          final List<LatLng> points = routePoints[j];
+
+          final Polyline routePolyline = Polyline(
+            polylineId: PolylineId("route_segment_$i _ $j"),
+            points: points,
+            width: j == 0 ? 5 : 2,
+            color: j == 0 ? Colors.blue : Colors.grey,
+            patterns: j == 0 ? [] : [PatternItem.dot],
+          );
+
+          setState(() {
+            polyLines.add(routePolyline);
+          });
+        }
+      }
+
+      // Move the camera to the user's current position
+      mapController.animateCamera(CameraUpdate.newLatLng(origin));
+    } catch (e) {
+      print('Error in showRouteToHighFillingDustbins: $e');
+      ShowMToast(context).errorToast(
+          message: "Error in showRouteToHighFillingDustbins: $e",
+          alignment: Alignment.center);
+    } finally {
+      setState(() {
+        isLoadingRoute = false;
+      });
+    }
+  }
+
   Future<void> _onMapCreated(GoogleMapController controller) async {
     mapController = controller;
     _controllerGoogleMap.complete(controller);
@@ -312,6 +379,52 @@ class _DriversMapState extends State<DriversMap> {
     _loadDustbins();
   }
 
+  // Function to show the modal bottom sheet with a list of buttons
+  void _showOptions(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      builder: (BuildContext context) {
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ListTile(
+              leading: Icon(Icons.my_location),
+              title: Text('My Location'),
+              onTap: () async {
+                Navigator.pop(context); // Close the bottom sheet
+                Position currentPosition = await Geolocator.getCurrentPosition(
+                  desiredAccuracy: geolocator.LocationAccuracy.high,
+                );
+                LatLng userPosition =
+                    LatLng(currentPosition.latitude, currentPosition.longitude);
+                mapController?.animateCamera(
+                  CameraUpdate.newLatLng(userPosition),
+                );
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.directions),
+              title: Text('Show Route'),
+              onTap: () {
+                Navigator.pop(context); // Close the bottom sheet
+                // Add functionality to show route here
+              },
+            ),
+            ListTile(
+              leading: Icon(Icons.clear),
+              title: Text('Clear Map'),
+              onTap: () {
+                Navigator.pop(context); // Close the bottom sheet
+                // Add functionality to clear map here
+              },
+            ),
+            // Add more ListTiles for additional buttons
+          ],
+        );
+      },
+    );
+  }
+
   // ),
   GlobalKey<ScaffoldState> sKey = GlobalKey<ScaffoldState>();
   @override
@@ -324,10 +437,11 @@ class _DriversMapState extends State<DriversMap> {
           actions: [
             IconButton(
                 onPressed: () {
-                  Navigator.push(context,
-                      MaterialPageRoute(builder: (context) => ORServices()));
+                  // Navigator.push(context,
+                  //     MaterialPageRoute(builder: (context) => ORServices()));
+                  showRouteToHighFillingDustbins();
                 },
-                icon: Icon(Icons.map))
+                icon: Icon(Icons.directions))
           ],
         ),
         drawer: Drawer(
@@ -422,20 +536,21 @@ class _DriversMapState extends State<DriversMap> {
 
                 // Custom "My Location" button
                 Positioned(
-                  bottom: 20,
-                  // right: 20,
-                  left: 20,
+                  bottom: 100,
+                  right: 10,
+                  // left: 20,
                   child: FloatingActionButton(
                     onPressed: () async {
-                      Position currentPosition =
-                          await Geolocator.getCurrentPosition(
-                        desiredAccuracy: geolocator.LocationAccuracy.high,
-                      );
-                      LatLng userPosition = LatLng(
-                          currentPosition.latitude, currentPosition.longitude);
-                      mapController.animateCamera(
-                        CameraUpdate.newLatLng(userPosition),
-                      );
+                      // Position currentPosition =
+                      //     await Geolocator.getCurrentPosition(
+                      //   desiredAccuracy: geolocator.LocationAccuracy.high,
+                      // );
+                      // LatLng userPosition = LatLng(
+                      //     currentPosition.latitude, currentPosition.longitude);
+                      // mapController.animateCamera(
+                      //   CameraUpdate.newLatLng(userPosition),
+                      // );
+                      _showOptions(context);
                     },
                     child: Icon(Icons.my_location),
                   ),
@@ -622,6 +737,14 @@ class _DriversMapState extends State<DriversMap> {
             },
           ),
         ]),
+        // floatingActionButtonLocation: FloatingActionButtonLocation.,
+        // floatingActionButton: IconButton(
+        //     onPressed: () {
+        //       // Navigator.push(context,
+        //       //     MaterialPageRoute(builder: (context) => ORServices()));
+        //       showRouteToHighFillingDustbins();
+        //     },
+        //     icon: Icon(Icons.directions)),
       ),
     );
   }
