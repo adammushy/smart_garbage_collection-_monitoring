@@ -50,19 +50,16 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyB7s-Lzzk6IEV6XC3Y6Ojte4hTMGV7JpcM',
-    appId: '1:94467889300:android:7247c3d9d982a4bd6efc81',
-    messagingSenderId: '94467889300',
-    projectId: 'smart-garbage-collection-8fb03',
-    storageBucket: 'smart-garbage-collection-8fb03.appspot.com',
+    apiKey: '{{ androidApiKey }}',
+    appId: '{{ androidAppId }}',
+    messagingSenderId: '{{ androidMessagingSenderId }}',
+    projectId: '{{ androidProjectId }}',
+    storageBucket: '{{ androidStorageBucket }}',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDRI8rDw6a8QJgLYzHaQr4_-YW0HLA4MjQ',
-    appId: '1:94467889300:ios:6ee2cf25964b1d726efc81',
-    messagingSenderId: '94467889300',
-    projectId: 'smart-garbage-collection-8fb03',
-    storageBucket: 'smart-garbage-collection-8fb03.appspot.com',
-    iosBundleId: 'com.example.flutterProjectTemplate',
-  );
+    apiKey: '{{ iosApiKey }}',
+    appId: '{{ iosAppId }}',
+    messagingSenderId: '{{ iosMessagingSenderId }}',
+    projectId: '{{ iosProjectId }}',);
 }

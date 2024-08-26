@@ -12,6 +12,7 @@ import 'package:SGMCS/views/screens/auth/login_user.dart';
 import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:json_theme/json_theme.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -23,6 +24,7 @@ void main() async {
   final themeDark = await rootBundle.loadString('assets/darkTheme.json');
   final darkJson = jsonDecode(themeDark);
   final darkTheme = ThemeDecoder.decodeThemeData(darkJson)!;
+  await dotenv.load(fileName: '.env');
 
   runApp(
     MultiProvider(

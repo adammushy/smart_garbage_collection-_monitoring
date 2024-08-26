@@ -1,8 +1,14 @@
-// ignore_for_file: prefer_const_constructors, prefer_final_fields, prefer_const_literals_to_create_immutables
+// ignore_for_file: prefer_const_constructors, prefer_final_fields, prefer_const_literals_to_create_immutables, unused_local_variable, sort_child_properties_last
 
 import 'dart:typed_data';
 import 'dart:convert';
-
+import 'package:SGMCS/constants/app_constants.dart';
+import 'package:SGMCS/shared-functions/snack_bar.dart';
+import 'package:SGMCS/shared-preference-manager/preference-manager.dart';
+import 'package:SGMCS/views/screens/auth/login_user.dart';
+import 'package:SGMCS/views/screens/forms/breakdown-form.dart';
+import 'package:SGMCS/views/screens/forms/driversreportlist.dart';
+import 'package:SGMCS/views/screens/maps/orservices.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -32,7 +38,8 @@ class DriversMap extends StatefulWidget {
   @override
   State<DriversMap> createState() => _DriversMapState();
 
-  static void showAsBottomSheet(BuildContext context, DocumentSnapshot<Object?> dustbin) {}
+  static void showAsBottomSheet(
+      BuildContext context, DocumentSnapshot<Object?> dustbin) {}
 }
 
 class _DriversMapState extends State<DriversMap> {
@@ -41,7 +48,7 @@ class _DriversMapState extends State<DriversMap> {
   GoogleMapController? newGoogleMapController;
   final db = FirebaseFirestore.instance;
   bool isLoadingRoute = false;
-
+  List<LatLng> highFillingLevelDustbins = [];
   final List<LatLng> polyPoints = [];
   final Set<Polyline> polyLines = {};
   final Set<Polyline> _polylines = {};
@@ -212,6 +219,9 @@ class _DriversMapState extends State<DriversMap> {
       });
     } catch (e) {
       print('Error in showRouteToDustbin: $e');
+      ShowMToast(context).errorToast(
+          message: "Error in showRouteToDustbin: $e",
+          alignment: Alignment.center);
     } finally {
       // Set isLoadingRoute to false to indicate that the route calculation process is complete
       setState(() {
@@ -228,62 +238,68 @@ class _DriversMapState extends State<DriversMap> {
     await _loadMarkers();
   }
 
-  Future<void> _loadMarkers() async {
-    final Uint8List markerIcon =
+  // Function to load dustbin icons
+  Future<Map<String, Uint8List>> _loadDustbinIcons() async {
+    final Uint8List greenIcon =
         await getBytesFromAsset('assets/images/greendustbin.png', 90);
+    final Uint8List yellowIcon =
+        await getBytesFromAsset('assets/images/yellowdustbin.png', 90);
+    final Uint8List orangeIcon =
+        await getBytesFromAsset('assets/images/orangedustbin.png', 90);
+    final Uint8List redIcon =
+        await getBytesFromAsset('assets/images/reddustbin.png', 90);
 
-    await db
-        .collection("data")
-        .where("percentage", isLessThanOrEqualTo: 60)
-        .where("state")
-        .snapshots()
-        .listen((event) {
+    return {
+      "green": greenIcon,
+      "yellow": yellowIcon,
+      "orange": orangeIcon,
+      "red": redIcon,
+    };
+  }
+
+  Future<void> _loadMarkers() async {
+    final Map<String, Uint8List> icons = await _loadDustbinIcons();
+
+    await db.collection("data").snapshots().listen((event) {
       setState(() {
         _markers.clear();
+        highFillingLevelDustbins.clear(); // Clear previous list
+
         for (var doc in event.docs) {
           final position =
               LatLng(doc.data()["Latitude"], doc.data()["Longitude"]);
+          final int percentage = doc.data()["percentage"];
+          final Uint8List markerIcon;
+
+          // Select the appropriate icon based on the percentage
+          if (percentage <= 40) {
+            markerIcon = icons["green"]!;
+          } else if (percentage <= 60) {
+            markerIcon = icons["yellow"]!;
+          } else if (percentage < 90) {
+            markerIcon = icons["orange"]!;
+          } else {
+            markerIcon = icons["red"]!;
+            highFillingLevelDustbins
+                .add(position); // Add to the list if 90% or above
+          }
+
           final marker = Marker(
             markerId: MarkerId(doc.id),
             position: position,
             infoWindow: InfoWindow(
               title:
                   "id : ${doc.data()["name"]}\n state: ${doc.data()["state"]}",
-              snippet: "percentage : ${doc.data()["percentage"]}",
+              snippet: "percentage : $percentage",
               onTap: () => showRouteToDustbin(position),
             ),
             icon: BitmapDescriptor.fromBytes(markerIcon),
           );
+
           _markers.add(marker);
         }
-      });
-    });
 
-    final Uint8List markerIconFull =
-        await getBytesFromAsset('assets/images/reddustbin.png', 90);
-
-    await db
-        .collection("data")
-        .where("percentage", isGreaterThan: 60)
-        .snapshots()
-        .listen((event) {
-      setState(() {
-        for (var doc in event.docs) {
-          final position =
-              LatLng(doc.data()["Latitude"], doc.data()["Longitude"]);
-          final marker = Marker(
-            markerId: MarkerId(doc.id),
-            position: position,
-            infoWindow: InfoWindow(
-              title:
-                  "id : ${doc.data()["name"]}\n state: ${doc.data()["state"]}",
-              snippet: "percentage : ${doc.data()["percentage"]}",
-              onTap: () => showRouteToDustbin(position),
-            ),
-            icon: BitmapDescriptor.fromBytes(markerIconFull),
-          );
-          _markers.add(marker);
-        }
+        print("HIGHEST FILLED DUSTBINS :: $highFillingLevelDustbins");
       });
     });
   }
@@ -303,20 +319,62 @@ class _DriversMapState extends State<DriversMap> {
     return SafeArea(
       child: Scaffold(
         // key: sKey,
-        appBar: AppBar(),
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          actions: [
+            IconButton(
+                onPressed: () {
+                  Navigator.push(context,
+                      MaterialPageRoute(builder: (context) => ORServices()));
+                },
+                icon: Icon(Icons.map))
+          ],
+        ),
         drawer: Drawer(
           width: 255,
           child: FanSideDrawer(
             menuItems: [
               DrawerMenuItem(
-                title: "Report",
+                title: "Breakdown Report",
                 onMenuTapped: () {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => ReportForm(),
+                      builder: (context) => BreakDownForm(),
                     ),
                   );
+                },
+              ),
+              DrawerMenuItem(
+                title: "My Reports",
+                icon: Icons.list,
+                onMenuTapped: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ReportListScreen(),
+                    ),
+                  );
+                },
+              ),
+              DrawerMenuItem(
+                title: "Log Out",
+                icon: Icons.logout,
+                onMenuTapped: () {
+                  SharedPreferencesManager()
+                      .clearPreferenceByKey(AppConstants.isLogin);
+                  SharedPreferencesManager()
+                      .clearPreferenceByKey(AppConstants.user);
+                  // SharedPreferencesManager()
+                  //     .clearPreferenceByKey(AppConstants.userAccount);
+                  // ZegoUIKitPrebuiltCallInvitationService().uninit();
+                  Navigator.pop(context);
+
+                  Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const Login(),
+                      ));
                 },
               )
             ],
@@ -361,23 +419,7 @@ class _DriversMapState extends State<DriversMap> {
                     child: CircularProgressIndicator(),
                   ),
                 ),
-                Positioned(
-                  top: 150,
-                  left: 20,
-                  child: GestureDetector(
-                    onTap: () {
-                      // sKey.currentState!.openDrawer();
-                      // showAsBottomSheet(context);
-                    },
-                    child: const CircleAvatar(
-                      backgroundColor: Colors.grey,
-                      child: Icon(
-                        Icons.menu,
-                        color: Color.fromARGB(136, 0, 0, 0),
-                      ),
-                    ),
-                  ),
-                ),
+
                 // Custom "My Location" button
                 Positioned(
                   bottom: 20,
@@ -573,7 +615,7 @@ class _DriversMapState extends State<DriversMap> {
                 color: Colors.green,
                 alignment: Alignment.center,
                 child: Text(
-                  'This is the header',
+                  'Dustbin List',
                   style: TextStyle(),
                 ),
               );

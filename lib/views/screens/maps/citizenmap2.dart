@@ -1,7 +1,10 @@
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
+
 import 'dart:typed_data';
 import 'dart:convert';
 
 import 'package:SGMCS/views/screens/maps/driversMap2.dart';
+import 'package:SGMCS/views/screens/maps/orservices.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
@@ -160,89 +163,6 @@ class _CitizenMap2State extends State<CitizenMap2> {
     }
   }
 
-  // Future<void> showRouteToDustbin(LatLng dustbinPosition) async {
-  //   setState(() {
-  //     isLoadingRoute = true;
-  //   });
-
-  //   try {
-  //     final Position currentPosition = await Geolocator.getCurrentPosition(
-  //       desiredAccuracy: geolocator.LocationAccuracy.high,
-  //     );
-
-  //     LatLng origin =
-  //         LatLng(currentPosition.latitude, currentPosition.longitude);
-
-  //     mapController.animateCamera(CameraUpdate.newLatLng(origin));
-
-  //     final List<List<LatLng>> allRoutes = await getRoutePoints(
-  //       "${origin.latitude},${origin.longitude}",
-  //       "${dustbinPosition.latitude},${dustbinPosition.longitude}",
-  //       "driving",
-  //     );
-  //     print("ROUTES ::: $allRoutes");
-
-  //     for (int i = 0; i < allRoutes.length; i++) {
-  //       final List<LatLng> routePoints = allRoutes[i];
-
-  //       final Polyline routePolyline = Polyline(
-  //         polylineId: PolylineId("route_to_dustbin_$i"),
-  //         points: routePoints,
-  //         width: i == 0 ? 5 : 2,
-  //         color: i == 0 ? Colors.green : Colors.grey,
-  //         patterns: i == 0 ? [] : [PatternItem.dot],
-  //       );
-
-  //       setState(() {
-  //         polyLines.add(routePolyline);
-  //       });
-  //       print("ROUTES ::: $polyLines");
-  //     }
-
-  //     double distance = await getRouteDistance(origin, dustbinPosition);
-  //     int drivingDuration =
-  //         await getRouteDuration(origin, dustbinPosition, 'driving');
-  //     int walkingDuration =
-  //         await getRouteDuration(origin, dustbinPosition, 'walking');
-
-  //     showDialog(
-  //       context: context,
-  //       builder: (context) {
-  //         return AlertDialog(
-  //           title: Text("Route Information"),
-  //           content: Column(
-  //             mainAxisSize: MainAxisSize.min,
-  //             children: [
-  //               Text("Total Distance: ${distance.toStringAsFixed(2)} km"),
-  //               Text("Estimated Driving Time: $drivingDuration minutes"),
-  //               Text("Estimated Walking Time: $walkingDuration minutes"),
-  //             ],
-  //           ),
-  //           actions: [
-  //             TextButton(
-  //               onPressed: () => Navigator.pop(context),
-  //               child: Text("OK"),
-  //             ),
-  //           ],
-  //         );
-  //       },
-  //     );
-
-  //     geolocator.Geolocator.getPositionStream().listen((Position newPosition) {
-  //       setState(() {
-  //         origin = LatLng(newPosition.latitude, newPosition.longitude);
-  //       });
-
-  //       mapController.animateCamera(CameraUpdate.newLatLng(origin));
-  //     });
-  //   } catch (e) {
-  //     print('Error in showRouteToDustbin: $e');
-  //   } finally {
-  //     setState(() {
-  //       isLoadingRoute = false;
-  //     });
-  //   }
-  // }
   void _displayRoutes(
       List<List<LatLng>> drivingRoutes, List<List<LatLng>> walkingRoutes) {
     for (int i = 0; i < drivingRoutes.length; i++) {
@@ -378,62 +298,127 @@ class _CitizenMap2State extends State<CitizenMap2> {
     await _loadDustbins();
   }
 
-  Future<void> _loadMarkers() async {
-    final Uint8List markerIcon =
-        await getBytesFromAsset('assets/images/greendustbin.png', 90);
+  // Future<void> _loadMarkers() async {
+  //   final Uint8List markerIcon =
+  //       await getBytesFromAsset('assets/images/greendustbin.png', 90);
 
-    await db
-        .collection("data")
-        .where("percentage", isLessThanOrEqualTo: 60)
-        .where("state")
-        .snapshots()
-        .listen((event) {
+  //   await db
+  //       .collection("data")
+  //       .where("percentage", isLessThanOrEqualTo: 60)
+  //       .where("state")
+  //       .snapshots()
+  //       .listen((event) {
+  //     setState(() {
+  //       _markers.clear();
+  //       for (var doc in event.docs) {
+  //         final position =
+  //             LatLng(doc.data()["Latitude"], doc.data()["Longitude"]);
+  //         final marker = Marker(
+  //           markerId: MarkerId(doc.id),
+  //           position: position,
+  //           infoWindow: InfoWindow(
+  //             title:
+  //                 "id : ${doc.data()["name"]}\n state: ${doc.data()["state"]}",
+  //             snippet: "percentage : ${doc.data()["percentage"]}",
+  //             onTap: () => showRouteToDustbin(position),
+  //           ),
+  //           icon: BitmapDescriptor.fromBytes(markerIcon),
+  //         );
+  //         _markers.add(marker);
+  //       }
+  //     });
+  //   });
+
+  //   final Uint8List markerIconFull =
+  //       await getBytesFromAsset('assets/images/reddustbin.png', 90);
+
+  //   await db
+  //       .collection("data")
+  //       .where("percentage", isGreaterThan: 60)
+  //       .snapshots()
+  //       .listen((event) {
+  //     setState(() {
+  //       for (var doc in event.docs) {
+  //         final position =
+  //             LatLng(doc.data()["Latitude"], doc.data()["Longitude"]);
+  //         final marker = Marker(
+  //           markerId: MarkerId(doc.id),
+  //           position: position,
+  //           infoWindow: InfoWindow(
+  //             title:
+  //                 "id : ${doc.data()["name"]}\n state: ${doc.data()["state"]}",
+  //             snippet: "percentage : ${doc.data()["percentage"]}",
+  //             onTap: () => showRouteToDustbin(position),
+  //           ),
+  //           icon: BitmapDescriptor.fromBytes(markerIconFull),
+  //         );
+  //         _markers.add(marker);
+  //       }
+  //     });
+  //   });
+  // }
+   // Function to load dustbin icons
+  Future<Map<String, Uint8List>> _loadDustbinIcons() async {
+    final Uint8List greenIcon =
+        await getBytesFromAsset('assets/images/greendustbin.png', 90);
+    final Uint8List yellowIcon =
+        await getBytesFromAsset('assets/images/yellowdustbin.png', 90);
+    final Uint8List orangeIcon =
+        await getBytesFromAsset('assets/images/orangedustbin.png', 90);
+    final Uint8List redIcon =
+        await getBytesFromAsset('assets/images/reddustbin.png', 90);
+
+    return {
+      "green": greenIcon,
+      "yellow": yellowIcon,
+      "orange": orangeIcon,
+      "red": redIcon,
+    };
+  }
+
+  Future<void> _loadMarkers() async {
+    final Map<String, Uint8List> icons = await _loadDustbinIcons();
+
+    await db.collection("data").snapshots().listen((event) {
       setState(() {
         _markers.clear();
+        // highFillingLevelDustbins.clear(); // Clear previous list
+
         for (var doc in event.docs) {
           final position =
               LatLng(doc.data()["Latitude"], doc.data()["Longitude"]);
+          final int percentage = doc.data()["percentage"];
+          final Uint8List markerIcon;
+
+          // Select the appropriate icon based on the percentage
+          if (percentage <= 40) {
+            markerIcon = icons["green"]!;
+          } else if (percentage <= 60) {
+            markerIcon = icons["yellow"]!;
+          } else if (percentage < 90) {
+            markerIcon = icons["orange"]!;
+          } else {
+            markerIcon = icons["red"]!;
+            // highFillingLevelDustbins
+            //     .add(position); // Add to the list if 90% or above
+          }
+
           final marker = Marker(
             markerId: MarkerId(doc.id),
             position: position,
             infoWindow: InfoWindow(
               title:
                   "id : ${doc.data()["name"]}\n state: ${doc.data()["state"]}",
-              snippet: "percentage : ${doc.data()["percentage"]}",
+              snippet: "percentage : $percentage",
               onTap: () => showRouteToDustbin(position),
             ),
             icon: BitmapDescriptor.fromBytes(markerIcon),
           );
+
           _markers.add(marker);
         }
-      });
-    });
 
-    final Uint8List markerIconFull =
-        await getBytesFromAsset('assets/images/reddustbin.png', 90);
-
-    await db
-        .collection("data")
-        .where("percentage", isGreaterThan: 60)
-        .snapshots()
-        .listen((event) {
-      setState(() {
-        for (var doc in event.docs) {
-          final position =
-              LatLng(doc.data()["Latitude"], doc.data()["Longitude"]);
-          final marker = Marker(
-            markerId: MarkerId(doc.id),
-            position: position,
-            infoWindow: InfoWindow(
-              title:
-                  "id : ${doc.data()["name"]}\n state: ${doc.data()["state"]}",
-              snippet: "percentage : ${doc.data()["percentage"]}",
-              onTap: () => showRouteToDustbin(position),
-            ),
-            icon: BitmapDescriptor.fromBytes(markerIconFull),
-          );
-          _markers.add(marker);
-        }
+        // print("HIGHEST FILLED DUSTBINS :: $highFillingLevelDustbins");
       });
     });
   }
@@ -458,7 +443,9 @@ class _CitizenMap2State extends State<CitizenMap2> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        appBar: AppBar(),
+        appBar: AppBar(
+         
+        ),
         drawer: Drawer(
           width: 255,
           child: FanSideDrawer(
@@ -473,7 +460,7 @@ class _CitizenMap2State extends State<CitizenMap2> {
                     ),
                   );
                 },
-              )
+              ),
             ],
           ),
         ),
@@ -611,9 +598,9 @@ class _CitizenMap2State extends State<CitizenMap2> {
                               },
                               leading: InkWell(
                                 onTap: () {
-                                  // showAsBottomSheet(context, dustbin);
-                                  DriversMap.showAsBottomSheet(
-                                      context, dustbin);
+                                  showAsBottomSheet(context, dustbin, distance);
+                                  // DriversMap.showAsBottomSheet(
+                                  //     context, dustbin);
                                 },
                                 child: Column(
                                   children: [
@@ -642,7 +629,7 @@ class _CitizenMap2State extends State<CitizenMap2> {
                   color: Colors.green,
                   alignment: Alignment.center,
                   child: Text(
-                    'This is the header',
+                    'Nearby Dustbins',
                     style: TextStyle(),
                   ),
                 );
@@ -719,5 +706,145 @@ class _CitizenMap2State extends State<CitizenMap2> {
     } catch (e) {
       print("Error loading dustbins: $e");
     }
+  }
+
+  void showAsBottomSheet(BuildContext context, dustbin, distance) async {
+    final result = await showSlidingBottomSheet(context, builder: (context) {
+      return SlidingSheetDialog(
+        elevation: 8,
+        cornerRadius: 16,
+        snapSpec: SnapSpec(
+          snap: true,
+          snappings: [0.4, 0.7, 1.0],
+          positioning: SnapPositioning.relativeToAvailableSpace,
+        ),
+        builder: (context, state) {
+          final int percentage = dustbin['percentage'];
+
+          Color textColor;
+          Color buttonColor;
+
+          // Determine text color and button color based on percentage
+
+          String imageAsset;
+          if (dustbin['percentage'] <= 30) {
+            textColor = Colors.green; // Green
+
+            imageAsset = 'assets/images/greendustbin.png';
+          } else if (dustbin['percentage'] > 30 &&
+              dustbin['percentage'] <= 50) {
+            textColor = Colors.yellow; // Yellow
+
+            imageAsset = 'assets/images/yellowdustbin.png';
+          } else if (dustbin['percentage'] > 50 &&
+              dustbin['percentage'] <= 80) {
+            textColor = Colors.orange; // Orange
+
+            imageAsset = 'assets/images/orangedustbin.png';
+          } else {
+            textColor = Colors.red; // Red
+            imageAsset = 'assets/images/reddustbin.png';
+          }
+
+          return Container(
+            height: 500,
+            padding: EdgeInsets.all(16),
+            color: Colors.white, // Adjust as needed
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '${dustbin['state']}',
+                  style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black,
+                      decoration: TextDecoration.none),
+                ),
+                SizedBox(height: 16),
+                Center(
+                  child: Container(
+                    height: 120,
+                    width: 120,
+                    decoration: BoxDecoration(
+                      image: DecorationImage(
+                        image: AssetImage(imageAsset),
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Center(
+                  child: Text(
+                    '${dustbin['name']}',
+                    style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                        decoration: TextDecoration.none),
+                  ),
+                ),
+                SizedBox(height: 16),
+                Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        // '${dustbin['percentage']}%',
+                        '${(distance / 1000).toStringAsFixed(2)}',
+                        style: TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                            decoration: TextDecoration.none),
+                      ),
+                      SizedBox(
+                        width: 4,
+                      ),
+                      Text(
+                        "km",
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                            decoration: TextDecoration.none),
+                      ),
+                    ],
+                  ),
+                ),
+                
+                SizedBox(height: 16),
+                Center(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // Generate route to this dustbin
+                      // Call the function to generate the route here
+                      showRouteToDustbin(
+                        LatLng(dustbin['Latitude'], dustbin['Longitude']),
+                      );
+                      Navigator.pop(context);
+                    },
+                    style: ButtonStyle(
+                      maximumSize: MaterialStatePropertyAll(Size(240, 80)),
+                      minimumSize: MaterialStatePropertyAll(Size(200, 60)),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Generate Route', style: TextStyle(fontSize: 16)),
+                        Icon(Icons.directions, size: 32)
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    });
+
+    print("RESULT :: $result"); // This is the result.
   }
 }
