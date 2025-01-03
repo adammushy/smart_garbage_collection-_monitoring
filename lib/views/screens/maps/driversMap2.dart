@@ -1,5 +1,6 @@
 // ignore_for_file: prefer_const_constructors, prefer_final_fields, prefer_const_literals_to_create_immutables, unused_local_variable, sort_child_properties_last
 
+import 'dart:math';
 import 'dart:typed_data';
 import 'dart:convert';
 import 'package:SGMCS/constants/app_constants.dart';
@@ -8,28 +9,20 @@ import 'package:SGMCS/shared-preference-manager/preference-manager.dart';
 import 'package:SGMCS/views/screens/auth/login_user.dart';
 import 'package:SGMCS/views/screens/forms/breakdown-form.dart';
 import 'package:SGMCS/views/screens/forms/driversreportlist.dart';
-import 'package:SGMCS/views/screens/maps/orservices.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/widgets.dart';
-import 'package:SGMCS/views/screens/drawer/custom_drawer.dart';
-import 'package:SGMCS/views/screens/forms/report-form.dart';
-import 'package:SGMCS/views/screens/maps/dustbindetails.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:async';
-import 'dart:convert';
-import 'package:open_route_service/open_route_service.dart';
-import 'package:location/location.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geolocator/geolocator.dart' as geolocator;
 import 'package:SGMCS/shared-functions/icon_maker.dart';
-import 'package:SGMCS/shared-functions/routes.dart';
-import 'package:http/http.dart';
 import 'package:http/http.dart' as http;
+import 'package:url_launcher/url_launcher.dart';
 import 'package:wtf_sliding_sheet/wtf_sliding_sheet.dart';
-import 'package:location/location.dart';
+
 import 'package:fan_side_drawer/fan_side_drawer.dart';
 
 // import 'package:geocoder/geocoder.dart';
@@ -57,19 +50,20 @@ class _DriversMapState extends State<DriversMap> {
   Set<Marker> _markers = {};
   LatLng? _currentDustbinPosition;
   Position? userCurrentPosition;
+  List<List<LatLng>> allroutespoints = [];
 
   // Define your API key
-  static  String _googleMapsApiKey =
-      "${dotenv.env['googleApiKey']}"; // Replace with your actual API Key
+  static String _googleMapsApiKey = "AIzaSyA5FX2TxXRsH8VoGbwwOdzNl1Igj_3YsAA";
+  // "${dotenv.env['googleApiKey']}"; // Replace with your actual API Key
 
   LocationPermission? _locationPermission;
 
   // distance and time api
   // State variables to store distance and duration
   double drivingDistance = 0.0; // Driving distance in meters
-  int drivingDuration = 0; // Driving duration in seconds
-  double walkingDistance = 0.0; // Walking distance in meters
-  int walkingDuration = 0; // Walking duration in seconds
+  int drivingDuration = 0; // diving time in secondsa
+  double walkingDistance = 0.0; // walkn distance in meters
+  int walkingDuration = 0; // waln time in seconds
 
   // Define travel mode options
   static const String travelModeDriving = "driving";
@@ -119,6 +113,9 @@ class _DriversMapState extends State<DriversMap> {
               .toList();
 
           allRoutes.add(points);
+          setState(() {
+            allroutespoints.add(points);
+          });
         }
         print("ALL ROUTES ${allRoutes}");
         print("NUMBER OF ROUTES ${allRoutes.length}");
@@ -297,6 +294,21 @@ class _DriversMapState extends State<DriversMap> {
     }
   }
 
+  double calculateDistance(LatLng p1, LatLng p2) {
+    const double R = 6371000; // Radius of Earth in meters
+    final double lat1 = p1.latitude * pi / 180;
+    final double lat2 = p2.latitude * pi / 180;
+    final double dLat = (p2.latitude - p1.latitude) * pi / 180;
+    final double dLon = (p2.longitude - p1.longitude) * pi / 180;
+
+    final double a = sin(dLat / 2) * sin(dLat / 2) +
+        cos(lat1) * cos(lat2) * sin(dLon / 2) * sin(dLon / 2);
+    final double c = 2 * atan2(sqrt(a), sqrt(1 - a));
+    final double distance = R * c;
+
+    return distance; // Distance in meters
+  }
+
   Future<void> _onMapCreated(GoogleMapController controller) async {
     mapController = controller;
     _controllerGoogleMap.complete(controller);
@@ -315,18 +327,27 @@ class _DriversMapState extends State<DriversMap> {
         await getBytesFromAsset('assets/images/orangedustbin.png', 90);
     final Uint8List redIcon =
         await getBytesFromAsset('assets/images/reddustbin.png', 90);
+    final Uint8List errorIcon =
+        await getBytesFromAsset('assets/images/dustbin_error.png', 90);
 
     return {
       "green": greenIcon,
       "yellow": yellowIcon,
       "orange": orangeIcon,
       "red": redIcon,
+      "error": errorIcon,
     };
   }
 
   Future<void> _loadMarkers() async {
     final Map<String, Uint8List> icons = await _loadDustbinIcons();
+    // Get the user's current position
+    final Position currentPosition = await Geolocator.getCurrentPosition(
+      desiredAccuracy: geolocator.LocationAccuracy.high,
+    );
 
+    LatLng userPosition =
+        LatLng(currentPosition.latitude, currentPosition.longitude);
     await db.collection("data").snapshots().listen((event) {
       setState(() {
         _markers.clear();
@@ -345,10 +366,17 @@ class _DriversMapState extends State<DriversMap> {
             markerIcon = icons["yellow"]!;
           } else if (percentage < 90) {
             markerIcon = icons["orange"]!;
-          } else {
+          } else if (percentage >= 90 && percentage <= 100) {
             markerIcon = icons["red"]!;
             highFillingLevelDustbins
                 .add(position); // Add to the list if 90% or above
+
+            // Sort the waypoints based on distance from the user's position
+            highFillingLevelDustbins.sort((a, b) =>
+                calculateDistance(userPosition, a)
+                    .compareTo(calculateDistance(userPosition, b)));
+          } else {
+            markerIcon = icons["error"]!;
           }
 
           final marker = Marker(
@@ -406,6 +434,7 @@ class _DriversMapState extends State<DriversMap> {
               leading: Icon(Icons.directions),
               title: Text('Show Route'),
               onTap: () {
+                showRouteToHighFillingDustbins();
                 Navigator.pop(context); // Close the bottom sheet
                 // Add functionality to show route here
               },
@@ -437,8 +466,6 @@ class _DriversMapState extends State<DriversMap> {
           actions: [
             IconButton(
                 onPressed: () {
-                  // Navigator.push(context,
-                  //     MaterialPageRoute(builder: (context) => ORServices()));
                   showRouteToHighFillingDustbins();
                 },
                 icon: Icon(Icons.directions))
@@ -479,9 +506,7 @@ class _DriversMapState extends State<DriversMap> {
                       .clearPreferenceByKey(AppConstants.isLogin);
                   SharedPreferencesManager()
                       .clearPreferenceByKey(AppConstants.user);
-                  // SharedPreferencesManager()
-                  //     .clearPreferenceByKey(AppConstants.userAccount);
-                  // ZegoUIKitPrebuiltCallInvitationService().uninit();
+                  ;
                   Navigator.pop(context);
 
                   Navigator.pushReplacement(
@@ -541,83 +566,178 @@ class _DriversMapState extends State<DriversMap> {
                   // left: 20,
                   child: FloatingActionButton(
                     onPressed: () async {
-                      // Position currentPosition =
-                      //     await Geolocator.getCurrentPosition(
-                      //   desiredAccuracy: geolocator.LocationAccuracy.high,
-                      // );
-                      // LatLng userPosition = LatLng(
-                      //     currentPosition.latitude, currentPosition.longitude);
-                      // mapController.animateCamera(
-                      //   CameraUpdate.newLatLng(userPosition),
-                      // );
                       _showOptions(context);
                     },
                     child: Icon(Icons.my_location),
                   ),
                 ),
-                Positioned(
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  child: AnimatedSize(
-                    curve: Curves.easeIn,
-                    duration: const Duration(milliseconds: 120),
-                    child: Container(
-                      height: 120,
-                      decoration: const BoxDecoration(
-                        borderRadius: BorderRadius.only(
-                          topRight: Radius.circular(20),
-                          topLeft: Radius.circular(20),
+                Visibility(
+                  visible: polyLines.isEmpty,
+                  child: Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: AnimatedSize(
+                      curve: Curves.easeIn,
+                      duration: const Duration(milliseconds: 120),
+                      child: Container(
+                        height: 120,
+                        decoration: const BoxDecoration(
+                          borderRadius: BorderRadius.only(
+                            topRight: Radius.circular(20),
+                            topLeft: Radius.circular(20),
+                          ),
                         ),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 24, vertical: 18),
-                        child: Column(
-                          children: [
-                            Row(
-                              children: [
-                                ElevatedButton(
-                                  child: const Text("Refresh"),
-                                  onPressed: () {
-                                    Navigator.pushReplacement(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) => DriversMap()),
-                                    );
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    padding: const EdgeInsets.fromLTRB(
-                                        10, 10, 10, 10),
-                                    textStyle: const TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w900),
-                                  ),
-                                ),
-                                Spacer(),
-                                Visibility(
-                                  visible: polyLines.isNotEmpty,
-                                  child: ElevatedButton(
-                                    child: const Text("Cancel route"),
-                                    onPressed: clearRoute,
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 18),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  ElevatedButton(
+                                    child: const Text("Refresh"),
+                                    onPressed: () {
+                                      Navigator.pushReplacement(
+                                        context,
+                                        MaterialPageRoute(
+                                            builder: (context) => DriversMap()),
+                                      );
+                                    },
                                     style: ElevatedButton.styleFrom(
                                       padding: const EdgeInsets.fromLTRB(
-                                          20, 10, 20, 10),
+                                          10, 10, 10, 10),
                                       textStyle: const TextStyle(
                                           fontSize: 24,
                                           fontWeight: FontWeight.w900),
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ],
+                                  Spacer(),
+                                  Visibility(
+                                    visible: polyLines.isNotEmpty,
+                                    child: ElevatedButton(
+                                      child: const Text("Cancel route"),
+                                      onPressed: clearRoute,
+                                      style: ElevatedButton.styleFrom(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            20, 10, 20, 10),
+                                        textStyle: const TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w900),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
                 ),
+                Visibility(
+                  visible: polyLines.isNotEmpty,
+                  child: Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: AnimatedSize(
+                      curve: Curves.easeIn,
+                      duration: const Duration(milliseconds: 120),
+                      child: Container(
+                        height: 120,
+                        decoration: const BoxDecoration(
+                          borderRadius: BorderRadius.only(
+                            topRight: Radius.circular(20),
+                            topLeft: Radius.circular(20),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 18),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  ElevatedButton(
+                                    child: const Text("Navigate"),
+                                    onPressed: () async {
+                                      // Constructing the Google Maps URL with waypoints
+                                      String googleMapsUrl =
+                                          'https://www.google.com/maps/dir/?api=1';
 
+                                      List<LatLng> waypoints =
+                                          highFillingLevelDustbins;
+                                      print('WAYPOINTS: ${waypoints}');
+
+                                      // Add the destination (last point)
+                                      googleMapsUrl +=
+                                          '&destination=${waypoints.last.latitude},${waypoints.last.longitude}';
+
+                                      // Add waypoints (for points between start and end)
+                                      if (waypoints.length > 1) {
+                                        googleMapsUrl += '&waypoints=';
+                                        for (int i = 1;
+                                            i < waypoints.length - 1;
+                                            i++) {
+                                          googleMapsUrl +=
+                                              '${waypoints[i].latitude},${waypoints[i].longitude}|';
+                                        }
+                                        googleMapsUrl = googleMapsUrl.substring(
+                                            0,
+                                            googleMapsUrl.length -
+                                                1); // Remove last '|'
+                                      }
+
+                                      // Optional: Travel mode can be driving, walking, bicycling, etc.
+                                      googleMapsUrl += '&travelmode=driving';
+
+                                      // Log the final URL for debugging
+                                      print('Google Maps URL: $googleMapsUrl');
+
+                                      // Launch Google Maps with the constructed URL
+                                      if (await canLaunchUrl(
+                                          Uri.parse(googleMapsUrl))) {
+                                        await launchUrl(
+                                            Uri.parse(googleMapsUrl));
+                                      } else {
+                                        print(
+                                            "Could not launch the Google Maps URL");
+                                      }
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.fromLTRB(
+                                          10, 10, 10, 10),
+                                      textStyle: const TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.w900),
+                                    ),
+                                  ),
+                                  Spacer(),
+                                  Visibility(
+                                    visible: polyLines.isNotEmpty,
+                                    child: ElevatedButton(
+                                      child: const Text("Cancel route"),
+                                      onPressed: clearRoute,
+                                      style: ElevatedButton.styleFrom(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            20, 10, 20, 10),
+                                        textStyle: const TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w900),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
                 Positioned(
                     bottom: _isBottomSheetExpanded ? 20 : null,
                     // left: 0,
@@ -650,34 +770,59 @@ class _DriversMapState extends State<DriversMap> {
                       Color textColor;
                       Color buttonColor;
 
-                      // Determine text color and button color based on percentage
+                      final Map<String, dynamic> dustbinData =
+                          dustbin.data() as Map<String, dynamic>;
 
                       String imageAsset;
-                      if (dustbin['percentage'] <= 30) {
-                        textColor = Colors.green; // Green
+
+                      // Determine icon and color based on percentage
+                      int percentage = dustbinData['percentage'];
+                      if (percentage <= 30) {
                         iconData = Icons.delete;
                         iconColor = Colors.green;
                         imageAsset = 'assets/images/greendustbin.png';
-                      } else if (dustbin['percentage'] > 30 &&
-                          dustbin['percentage'] <= 50) {
+                      } else if (percentage <= 50) {
                         iconData = Icons.delete;
                         iconColor = Colors.yellow;
-                        textColor = Colors.yellow; // Yellow
-
                         imageAsset = 'assets/images/yellowdustbin.png';
-                      } else if (dustbin['percentage'] > 50 &&
-                          dustbin['percentage'] <= 80) {
+                      } else if (percentage <= 80) {
                         iconData = Icons.delete;
                         iconColor = Colors.orange;
-                        textColor = Colors.orange; // Orange
-
                         imageAsset = 'assets/images/orangedustbin.png';
                       } else {
-                        textColor = Colors.red; // Red
                         iconData = Icons.delete;
                         iconColor = Colors.red;
                         imageAsset = 'assets/images/reddustbin.png';
                       }
+
+                      // // Determine text color and button color based on percentage
+
+                      // String imageAsset;
+                      // if (dustbin['percentage'] <= 30) {
+                      //   textColor = Colors.green; // Green
+                      //   iconData = Icons.delete;
+                      //   iconColor = Colors.green;
+                      //   imageAsset = 'assets/images/greendustbin.png';
+                      // } else if (dustbin['percentage'] > 30 &&
+                      //     dustbin['percentage'] <= 50) {
+                      //   iconData = Icons.delete;
+                      //   iconColor = Colors.yellow;
+                      //   textColor = Colors.yellow; // Yellow
+
+                      //   imageAsset = 'assets/images/yellowdustbin.png';
+                      // } else if (dustbin['percentage'] > 50 &&
+                      //     dustbin['percentage'] <= 80) {
+                      //   iconData = Icons.delete;
+                      //   iconColor = Colors.orange;
+                      //   textColor = Colors.orange; // Orange
+
+                      //   imageAsset = 'assets/images/orangedustbin.png';
+                      // } else {
+                      //   textColor = Colors.red; // Red
+                      //   iconData = Icons.delete;
+                      //   iconColor = Colors.red;
+                      //   imageAsset = 'assets/images/reddustbin.png';
+                      // }
                       return ListTile(
                           onLongPress: () {
                             showAsBottomSheet(context, dustbin);

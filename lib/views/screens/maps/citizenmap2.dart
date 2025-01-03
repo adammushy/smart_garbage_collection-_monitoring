@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables, depend_on_referenced_packages, deprecated_member_use, use_build_context_synchronously, unused_local_variable
 
 import 'dart:typed_data';
 import 'dart:convert';
@@ -29,6 +29,7 @@ import 'package:location/location.dart';
 import 'package:location/location.dart' as loc;
 
 import 'package:fan_side_drawer/fan_side_drawer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CitizenMap2 extends StatefulWidget {
   const CitizenMap2({super.key});
@@ -52,8 +53,8 @@ class _CitizenMap2State extends State<CitizenMap2> {
   LatLng? _currentDustbinPosition;
   Position? userCurrentPosition;
 
-  static String _googleMapsApiKey =
-      "${dotenv.env['googleApiKey']}";
+  static String _googleMapsApiKey = "AIzaSyA5FX2TxXRsH8VoGbwwOdzNl1Igj_3YsAA";
+  // "${dotenv.env['googleApiKey']}";
 
   LocationPermission? _locationPermission;
 
@@ -61,6 +62,9 @@ class _CitizenMap2State extends State<CitizenMap2> {
   int drivingDuration = 0;
   double walkingDistance = 0.0;
   int walkingDuration = 0;
+
+  double latitutd = 0.0;
+  double longitude = 0.0;
 
   static const String travelModeDriving = "driving";
   static const String travelModeWalking = "walking";
@@ -84,6 +88,7 @@ class _CitizenMap2State extends State<CitizenMap2> {
         "https://maps.googleapis.com/maps/api/directions/json?origin=$origin&destination=$destination&mode=$mode&key=$_googleMapsApiKey",
       ),
     );
+    print('RESPONSE on citizen map: ${response}');
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -116,7 +121,7 @@ class _CitizenMap2State extends State<CitizenMap2> {
   }
 
   Future<double> getRouteDistance(LatLng start, LatLng end) async {
-    final apiKey = 'AIzaSyD79hEbrrlDT2ko8JSpUrjgzIv7PjAwSTk';
+    final apiKey = 'AIzaSyA5FX2TxXRsH8VoGbwwOdzNl1Igj_3YsAA';
     final url = Uri.parse(
         'https://maps.googleapis.com/maps/api/distancematrix/json?units=metric&origins=${start.latitude},${start.longitude}&destinations=${end.latitude},${end.longitude}&key=$apiKey');
 
@@ -124,6 +129,7 @@ class _CitizenMap2State extends State<CitizenMap2> {
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
+      print('DATA route distance: ${data}');
       final distance = data['rows'][0]['elements'][0]['distance']['value'];
       return distance / 1000; // Convert meters to kilometers
     } else {
@@ -196,6 +202,18 @@ class _CitizenMap2State extends State<CitizenMap2> {
         polyLines.add(walkingRoutePolyline);
       });
     }
+  }
+
+  Future<Position> _getUserLocation() async {
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception('Location permissions are denied.');
+    }
+
+    return await Geolocator.getCurrentPosition();
   }
 
   Future<void> showRouteToDustbin(LatLng dustbinPosition) async {
@@ -299,66 +317,7 @@ class _CitizenMap2State extends State<CitizenMap2> {
     await _loadDustbins();
   }
 
-  // Future<void> _loadMarkers() async {
-  //   final Uint8List markerIcon =
-  //       await getBytesFromAsset('assets/images/greendustbin.png', 90);
-
-  //   await db
-  //       .collection("data")
-  //       .where("percentage", isLessThanOrEqualTo: 60)
-  //       .where("state")
-  //       .snapshots()
-  //       .listen((event) {
-  //     setState(() {
-  //       _markers.clear();
-  //       for (var doc in event.docs) {
-  //         final position =
-  //             LatLng(doc.data()["Latitude"], doc.data()["Longitude"]);
-  //         final marker = Marker(
-  //           markerId: MarkerId(doc.id),
-  //           position: position,
-  //           infoWindow: InfoWindow(
-  //             title:
-  //                 "id : ${doc.data()["name"]}\n state: ${doc.data()["state"]}",
-  //             snippet: "percentage : ${doc.data()["percentage"]}",
-  //             onTap: () => showRouteToDustbin(position),
-  //           ),
-  //           icon: BitmapDescriptor.fromBytes(markerIcon),
-  //         );
-  //         _markers.add(marker);
-  //       }
-  //     });
-  //   });
-
-  //   final Uint8List markerIconFull =
-  //       await getBytesFromAsset('assets/images/reddustbin.png', 90);
-
-  //   await db
-  //       .collection("data")
-  //       .where("percentage", isGreaterThan: 60)
-  //       .snapshots()
-  //       .listen((event) {
-  //     setState(() {
-  //       for (var doc in event.docs) {
-  //         final position =
-  //             LatLng(doc.data()["Latitude"], doc.data()["Longitude"]);
-  //         final marker = Marker(
-  //           markerId: MarkerId(doc.id),
-  //           position: position,
-  //           infoWindow: InfoWindow(
-  //             title:
-  //                 "id : ${doc.data()["name"]}\n state: ${doc.data()["state"]}",
-  //             snippet: "percentage : ${doc.data()["percentage"]}",
-  //             onTap: () => showRouteToDustbin(position),
-  //           ),
-  //           icon: BitmapDescriptor.fromBytes(markerIconFull),
-  //         );
-  //         _markers.add(marker);
-  //       }
-  //     });
-  //   });
-  // }
-   // Function to load dustbin icons
+  // Function to load dustbin icons
   Future<Map<String, Uint8List>> _loadDustbinIcons() async {
     final Uint8List greenIcon =
         await getBytesFromAsset('assets/images/greendustbin.png', 90);
@@ -444,9 +403,7 @@ class _CitizenMap2State extends State<CitizenMap2> {
   Widget build(BuildContext context) {
     return SafeArea(
       child: Scaffold(
-        appBar: AppBar(
-         
-        ),
+        appBar: AppBar(),
         drawer: Drawer(
           width: 255,
           child: FanSideDrawer(
@@ -493,6 +450,68 @@ class _CitizenMap2State extends State<CitizenMap2> {
                     zoomGesturesEnabled: true,
                     onCameraMove: onCameraMove,
                     onMapCreated: _onMapCreated,
+                  ),
+                  Positioned(
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    child: AnimatedSize(
+                      curve: Curves.easeIn,
+                      duration: const Duration(milliseconds: 120),
+                      child: Container(
+                        height: 120,
+                        decoration: const BoxDecoration(
+                          borderRadius: BorderRadius.only(
+                            topRight: Radius.circular(20),
+                            topLeft: Radius.circular(20),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 24, vertical: 18),
+                          child: Column(
+                            children: [
+                              Row(
+                                children: [
+                                  Visibility(
+                                    visible: polyLines.isNotEmpty,
+                                    child: ElevatedButton(
+                                      child: const Text("Navigate"),
+                                      onPressed: () async {
+                                        await launchUrl(Uri.parse(
+                                            'google.navigation:q=${latitutd},${longitude}&key=AIzaSyA5FX2TxXRsH8VoGbwwOdzNl1Igj_3YsAA'));
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            10, 10, 10, 10),
+                                        textStyle: const TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w900),
+                                      ),
+                                    ),
+                                  ),
+                                  Spacer(),
+                                  Visibility(
+                                    visible: polyLines.isNotEmpty,
+                                    child: ElevatedButton(
+                                      child: const Text("Cancel route"),
+                                      onPressed: clearRoute,
+                                      style: ElevatedButton.styleFrom(
+                                        padding: const EdgeInsets.fromLTRB(
+                                            20, 10, 20, 10),
+                                        textStyle: const TextStyle(
+                                            fontSize: 24,
+                                            fontWeight: FontWeight.w900),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -814,7 +833,6 @@ class _CitizenMap2State extends State<CitizenMap2> {
                     ],
                   ),
                 ),
-                
                 SizedBox(height: 16),
                 Center(
                   child: ElevatedButton(
@@ -824,6 +842,11 @@ class _CitizenMap2State extends State<CitizenMap2> {
                       showRouteToDustbin(
                         LatLng(dustbin['Latitude'], dustbin['Longitude']),
                       );
+
+                      setState(() {
+                        latitutd = dustbin['Latitude'];
+                        longitude = dustbin['Longitude'];
+                      });
                       Navigator.pop(context);
                     },
                     style: ButtonStyle(
@@ -839,6 +862,33 @@ class _CitizenMap2State extends State<CitizenMap2> {
                     ),
                   ),
                 ),
+                // SizedBox(height: 16),
+                // Center(
+                //   child: ElevatedButton(
+                //     onPressed: () async {
+                //       // Generate route to this dustbin
+                //       // Call the function to generate the route here
+                //       Position userPosition = await _getUserLocation();
+
+                //       await launchUrl(Uri.parse(
+                //           'google.navigation:q=${dustbin['Latitude']},${dustbin['Longitude']}&key=AIzaSyA5FX2TxXRsH8VoGbwwOdzNl1Igj_3YsAA'));
+
+                //       Navigator.pop(context);
+                //     },
+                //     style: ButtonStyle(
+                //       maximumSize: MaterialStatePropertyAll(Size(240, 80)),
+                //       minimumSize: MaterialStatePropertyAll(Size(200, 60)),
+                //     ),
+                //     child: Row(
+                //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                //       children: [
+                //         Text('Generate Direction',
+                //             style: TextStyle(fontSize: 16)),
+                //         Icon(Icons.directions, size: 32)
+                //       ],
+                //     ),
+                //   ),
+                // ),
               ],
             ),
           );

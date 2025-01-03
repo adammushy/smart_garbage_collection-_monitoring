@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_unnecessary_containers, prefer_const_constructors
+// ignore_for_file: avoid_unnecessary_containers, prefer_const_constructors, use_build_context_synchronously, unnecessary_brace_in_string_interps, avoid_print
 
 import 'dart:convert';
 import 'dart:io';
@@ -33,6 +33,7 @@ class _BreakDownFormState extends State<BreakDownForm> {
   final TextEditingController _reportEmailController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
   File? _image;
+  bool _isLoading = false;
 
   int _activeStepIndex = 0;
   List<XFile>? _imageFiles = [];
@@ -232,57 +233,89 @@ class _BreakDownFormState extends State<BreakDownForm> {
       appBar: AppBar(
         title: const Text('Breakdown Form'),
       ),
-      body: Stepper(
-        currentStep: _activeStepIndex,
-        steps: stepList(),
-        onStepContinue: () async {
-          if (_activeStepIndex < (stepList().length - 1)) {
-            setState(() {
-              _activeStepIndex += 1;
-            });
-          } else {
-            var image = await _imageFile!.readAsBytes();
-            var binaryImage = base64Encode(image);
-            print("Image :: $binaryImage");
-
-            // Form is valid, submit the data
-            // You can access form fields using controllers like _reporterNameController.text, etc.
-            // Also, access the image file using _image variable
-            // Process the submitted data here
-            var data = {
-              "driver": userId,
-              "attachment": binaryImage,
-              "description": _descriptionController.text,
-            };
-            Map<String, dynamic> result =
-                await Provider.of<DataManagementProvider>(context,
-                        listen: false)
-                    .report(context, data);
-            if (result['status']) {
-              print("submited succesfuly  :: ${result}");
-              ShowMToast(context).successToast(
-                  message: "${result['msg']}", alignment: Alignment.center);
-              Navigator.pop(context);
+      body: Stack(children: [
+        Stepper(
+          currentStep: _activeStepIndex,
+          steps: stepList(),
+          onStepContinue: () async {
+            if (_activeStepIndex < (stepList().length - 1)) {
+              setState(() {
+                _activeStepIndex += 1;
+              });
             } else {
-              ShowMToast(context).errorToast(
-                  message: "${result}", alignment: Alignment.center);
-              print("Errors :: ${result}");
+              setState(() {
+                _isLoading = true;
+              });
+              var image = await _imageFile!.readAsBytes();
+              var binaryImage = base64Encode(image);
+              print("Image :: $binaryImage");
+
+              // Form is valid, submit the data
+              // You can access form fields using controllers like _reporterNameController.text, etc.
+              // Also, access the image file using _image variable
+              // Process the submitted data here
+              var data = {
+                "driver": userId,
+                "attachment": binaryImage,
+                "description": _descriptionController.text,
+              };
+              Map<String, dynamic> result =
+                  await Provider.of<DataManagementProvider>(context,
+                          listen: false)
+                      .report(context, data);
+              if (result['status']) {
+                print("submited succesfuly  :: ${result}");
+                ShowMToast(context).successToast(
+                    message: "${result['msg']}", alignment: Alignment.center);
+
+                setState(() {
+                  _isLoading = false;
+                });
+
+                Future.delayed(Duration(seconds: 3), () {
+                  Navigator.pop(context);
+                });
+              } else {
+                setState(() {
+                  _isLoading = false;
+                });
+
+                ShowMToast(context).errorToast(
+                    message: "${result}", alignment: Alignment.center);
+                Future.delayed(Duration(seconds: 3), () {
+                  Navigator.pop(context);
+                });
+                print("Errors :: ${result}");
+              }
             }
-          }
-        },
-        onStepCancel: () {
-          if (_activeStepIndex > 0) {
+          },
+          onStepCancel: () {
+            if (_activeStepIndex > 0) {
+              setState(() {
+                _activeStepIndex -= 1;
+              });
+            }
+          },
+          onStepTapped: (int index) {
             setState(() {
-              _activeStepIndex -= 1;
+              _activeStepIndex = index;
             });
-          }
-        },
-        onStepTapped: (int index) {
-          setState(() {
-            _activeStepIndex = index;
-          });
-        },
-      ),
+          },
+        ),
+        if(_isLoading)
+        Center(
+            child: Container(
+              height: 40,
+              width: 40,
+              color:
+                  Colors.black.withOpacity(0.01), // Optional: dim the background
+              child: CircularProgressIndicator(
+                
+                color: Colors.green,
+              ),
+            ),
+          ),
+      ]),
     );
   }
 }

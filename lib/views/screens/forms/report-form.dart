@@ -1,4 +1,4 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, avoid_unnecessary_containers, prefer_const_literals_to_create_immutables, unused_element, use_build_context_synchronously, avoid_print, unnecessary_brace_in_string_interps
 
 import 'dart:convert';
 import 'dart:io';
@@ -27,6 +27,8 @@ class _ReportFormState extends State<ReportForm> {
   int _activeStepIndex = 0;
   List<XFile>? _imageFiles = [];
   XFile? _imageFile;
+
+  bool _isLoading = false;
 
   List<Step> stepList() => [
         Step(
@@ -302,6 +304,9 @@ class _ReportFormState extends State<ReportForm> {
               SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () async {
+                  setState(() {
+                    _isLoading = true;
+                  });
                   var image = await _imageFile!.readAsBytes();
                   var binaryImage = base64Encode(image);
                   if (_formKey.currentState!.validate()) {
@@ -320,20 +325,33 @@ class _ReportFormState extends State<ReportForm> {
 
                     if (result['status']) {
                       print("submited succesfuly  :: ${result}");
+                      setState(() {
+                        _isLoading = false;
+                      });
                       ShowMToast(context).successToast(
                           message: "${result['msg']}",
                           alignment: Alignment.center);
-                      Navigator.pop(context);
+
+                      Future.delayed(Duration(seconds: 3), () {
+                        Navigator.pop(context);
+                      });
                       // Navi
                     } else {
                       ShowMToast(context).errorToast(
                           message: "${result}", alignment: Alignment.center);
                       // print("Errors :: ${result}");
+                      Future.delayed(Duration(seconds: 3), () {
+                        Navigator.pop(context);
+                      });
                       print("Errors :: ${result}");
                     }
                   }
                 },
-                child: Text('Submit'),
+                child: _isLoading
+                    ? CircularProgressIndicator(
+                        color: Colors.green,
+                      )
+                    : Text('Submit'),
               ),
             ],
           ),

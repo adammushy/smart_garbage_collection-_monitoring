@@ -65,6 +65,13 @@ class _SignupState extends State<Signup> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
+                validator: (String? value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please enter username.";
+                  } else {
+                    return null;
+                  }
+                },
                 // validator: (String? value) {
                 //   if (value == null || value.isEmpty) {
                 //     return "Please enter username.";
@@ -116,6 +123,13 @@ class _SignupState extends State<Signup> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
+                validator: (String? value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please enter phone number.";
+                  } else {
+                    return null;
+                  }
+                },
                 // validator: (String? value) {
                 //   if (value == null || value.isEmpty) {
                 //     return "Please enter email.";
@@ -183,6 +197,13 @@ class _SignupState extends State<Signup> {
                     child: Text("Driver"),
                   ),
                 ],
+                validator: (String? value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please select usertype.";
+                  } else {
+                    return null;
+                  }
+                },
               ),
 
               const SizedBox(height: 10),

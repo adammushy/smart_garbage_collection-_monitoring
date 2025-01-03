@@ -7,7 +7,7 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:94467889300:android:7247c3d9d982a4bd6efc81",
+        "mobilesdk_app_id": "1:94467889300:android:1eacbf0c5705536b6efc81",
         "android_client_info": {
           "package_name": "com.example.SGMCS"
         }
@@ -20,7 +20,36 @@
       ],
       "api_key": [
         {
-          "current_key": "${API_KEY}"
+          "current_key": "AIzaSyB7s-Lzzk6IEV6XC3Y6Ojte4hTMGV7JpcM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "94467889300-qbqnpatqriqe6ut7e352b8u2n0ll7v2h.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:94467889300:android:7247c3d9d982a4bd6efc81",
+        "android_client_info": {
+          "package_name": "com.example.flutter_project_template"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "94467889300-qbqnpatqriqe6ut7e352b8u2n0ll7v2h.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB7s-Lzzk6IEV6XC3Y6Ojte4hTMGV7JpcM"
         }
       ],
       "services": {

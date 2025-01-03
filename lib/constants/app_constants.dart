@@ -11,7 +11,9 @@ class AppConstants {
   static const String user = 'user';
   static const String isLogin = 'is_login';
 
-  static String apiBaseUrl = "${dotenv.env['url']}/";
+  // static String apiBaseUrl = "${dotenv.env['url']}/";
+  static String apiBaseUrl = "http://157.245.109.105:6000/";
+
   static String mediaBaseUrl = '${dotenv.env['url']}';
 
   static const String registerUrl = 'user-management/register-user';

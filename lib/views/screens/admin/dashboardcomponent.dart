@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:SGMCS/providers/data-provider.dart';
 import 'package:SGMCS/providers/user-provider.dart';
+import 'package:SGMCS/views/screens/admin/allreports.dart';
 import 'package:SGMCS/views/screens/admin/allusers.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -37,8 +38,9 @@ class _StatsCardTileState extends State<StatsCardTile> {
   }
 
   void updateAllPermitsCount() {
-    final allReports = Provider.of<DataManagementProvider>(context, listen: true)
-        .allReportList;
+    final allReports =
+        Provider.of<DataManagementProvider>(context, listen: true)
+            .allReportList;
     // final count = allreport.length.toString();
     final count = allReports != null ? allReports.length.toString() : '0';
     print("Permits :: $count");
@@ -69,8 +71,8 @@ class _StatsCardTileState extends State<StatsCardTile> {
         onTap: () {
           if (widget.index == 0) {
             // GoRouter.of(context).go("/home/profile/lawyers");
-            // Navigator.push(context,
-            //     MaterialPageRoute(builder: (context) => AdminHomeScreen()));
+            Navigator.push(context,
+                MaterialPageRoute(builder: (context) => AllReportScreen()));
           } else if (widget.index == 1) {
             // GoRouter.of(context).go("/home/profile/users");
           } else if (widget.index == 2) {
@@ -88,8 +90,10 @@ class _StatsCardTileState extends State<StatsCardTile> {
         },
         child: Container(
           decoration: BoxDecoration(
-            color: Commons.dashColor[widget.index!],
+            // color: Commons.dashColor[widget.index!],
+
             // color: getRandomColor(),
+            color: Colors.green,
             borderRadius: BorderRadius.circular(20.0),
           ),
           child: Padding(

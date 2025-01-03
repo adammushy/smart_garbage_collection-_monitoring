@@ -123,15 +123,13 @@ class _LoginState extends State<Login> {
                   ),
                 ),
                 onEditingComplete: () => _focusNodePassword.requestFocus(),
-                // validator: (String? value) {
-                //   if (value == null || value.isEmpty) {
-                //     return "Please enter username.";
-                //   } else if (!_boxAccounts.containsKey(value)) {
-                //     return "Username is not registered.";
-                //   }
-
-                //   return null;
-                // },
+                validator: (String? value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please enter email.";
+                  } else {
+                    return null;
+                  }
+                },
               ),
               const SizedBox(height: 10),
               TextFormField(
@@ -158,6 +156,13 @@ class _LoginState extends State<Login> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
+                validator: (String? value) {
+                  if (value == null || value.isEmpty) {
+                    return "Please enter password.";
+                  } else {
+                    return null;
+                  }
+                },
                 // validator: (String? value) {
                 //   if (value == null || value.isEmpty) {
                 //     return "Please enter password.";
@@ -204,29 +209,11 @@ class _LoginState extends State<Login> {
                               message: "Successfully log in",
                               alignment: Alignment.bottomCenter);
                         } else {
-                          ShowMToast(context).successToast(
-                              message: "Successfully log in",
+                          ShowMToast(context).errorToast(
+                              message: "Failded to login ${result['body']['msg']}",
                               alignment: Alignment.bottomCenter);
-
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => DashboardScreen(),
-                            ),
-                          );
-
-                          // ShowMToast(context).successToast(
-                          //     message:
-                          //         "Thank you for login but you can't user this platform",
-                          //     alignment: Alignment.bottomCenter);
-                          // _controllerUsername.clear();
-                          // _controllerPassword.clear();
                         }
                       }
-                      //   Navigator.push(
-                      //       context,
-                      //       MaterialPageRoute(
-                      //           builder: (context) => DriversMap()));
                     },
                     child: const Text("Login"),
                   ),

@@ -45,6 +45,9 @@ dependencies:
   google_fonts: ^6.2.1
   fullscreen_image_viewer: ^0.0.6
   flutter_dotenv: ^5.1.0
+  url_launcher: ^6.3.0
+  permission_handler: ^11.3.1
+  maps_toolkit: ^3.0.0
   
   
 

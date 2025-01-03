@@ -24,7 +24,14 @@ void main() async {
   final themeDark = await rootBundle.loadString('assets/darkTheme.json');
   final darkJson = jsonDecode(themeDark);
   final darkTheme = ThemeDecoder.decodeThemeData(darkJson)!;
-  await dotenv.load(fileName: '.env');
+  // await dotenv.load(fileName: '.env');
+
+  try {
+    await dotenv.load(fileName: '.env');
+    print('Environment variables loaded');
+  } catch (e) {
+    print('Error loading .env file: $e');
+  }
 
   runApp(
     MultiProvider(
